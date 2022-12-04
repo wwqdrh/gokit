@@ -1,14 +1,115 @@
 package ostool
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"math/rand"
+	"mime/multipart"
 	"os"
+	"path"
 	"strconv"
 
 	fs "github.com/fsnotify/fsnotify"
 	"github.com/wwqdrh/logger"
 )
+
+type FileSize int64
+
+func (f FileSize) B() string {
+	return fmt.Sprintf("%dB", f)
+}
+
+func (f FileSize) KB() string {
+	return fmt.Sprintf("%dKB", f/1024)
+}
+
+func (f FileSize) MB() string {
+	return fmt.Sprintf("%dKB", f/1024/1024)
+}
+
+func (f FileSize) GB() string {
+	return fmt.Sprintf("%dKB", f/1024/1024/1024)
+}
+func (f FileSize) TB() string {
+	return fmt.Sprintf("%dKB", f/1024/1024/1024/1024)
+}
+
+type FileInfo struct {
+	Dir  string
+	Name string
+	Size FileSize
+}
+
+func FileStore(dir string, file *multipart.FileHeader) (FileInfo, error) {
+	var err error
+	if err = CreateDirIfNotExist(dir); err != nil {
+		return FileInfo{}, err
+	}
+
+	var name string
+	if name, err = RandomName(dir, FileExt(file), 12); err != nil {
+		return FileInfo{}, err
+	}
+	if err = SaveUploadedFile(file, path.Join(dir, name)); err != nil {
+		return FileInfo{}, err
+	}
+
+	return FileInfo{
+		Dir:  dir,
+		Name: name,
+		Size: FileSize(file.Size),
+	}, nil
+}
+
+func GetFileInfo(file string) (FileInfo, error) {
+	if info, err := os.Stat(file); os.IsNotExist(err) {
+		return FileInfo{}, err
+	} else {
+		dir, name := path.Split(file)
+		return FileInfo{
+			Dir:  dir,
+			Name: name,
+			Size: FileSize(info.Size()),
+		}, nil
+	}
+}
+
+func FileExt(file *multipart.FileHeader) string {
+	return path.Ext(file.Filename)
+}
+
+func SaveUploadedFile(file *multipart.FileHeader, dst string) error {
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, src)
+	return err
+}
+
+func RandomName(dir, ext string, length int) (string, error) {
+	for i := 0; i < 3; i++ {
+		res := make([]byte, length)
+		for i := 0; i < length; i++ {
+			res[i] = Letters[rand.Intn(len(Letters))]
+		}
+		name := fmt.Sprintf("%s.%s", string(res), ext)
+		if _, err := os.Stat(path.Join(dir, name)); os.IsNotExist(err) {
+			return name, nil
+		}
+	}
+	return "", errors.New("more 3 times")
+}
 
 // CreateDirIfNotExist create dir
 func CreateDirIfNotExist(dir string) error {
