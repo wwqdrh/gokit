@@ -5,7 +5,7 @@ import (
 	"os/exec"
 
 	"github.com/wwqdrh/gokit/logger"
-	"github.com/wwqdrh/ostool"
+	"github.com/wwqdrh/gokit/ostool"
 )
 
 type iptablesRule struct{}

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/wwqdrh/gokit/logger"
-	"github.com/wwqdrh/ostool"
+	"github.com/wwqdrh/gokit/ostool"
 )
 
 // listen address of systemd-resolved

@@ -7,8 +7,6 @@ require (
 	github.com/miekg/dns v1.1.45
 	github.com/stretchr/testify v1.8.0
 	github.com/tidwall/gjson v1.14.3
-	github.com/wwqdrh/gokit/logger v0.0.9
-	github.com/wwqdrh/ostool v0.0.0-20221024032333-a4c63e32e8b4
 	github.com/xjasonlyu/tun2socks/v2 v2.4.1
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29

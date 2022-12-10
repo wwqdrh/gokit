@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/wwqdrh/ostool"
+	"github.com/wwqdrh/gokit/ostool"
 )
 
 func TestSetupLocalDns(t *testing.T) {
