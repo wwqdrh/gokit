@@ -1,0 +1,37 @@
+version: "3"
+
+networks:
+  basic:
+
+volumes:
+  basic:
+
+services:
+  prometheus:
+    image: bitnami/prometheus:2.36.1
+    networks:
+      - basic
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./prometheus.yml:/opt/bitnami/prometheus/conf/prometheus.yml  # 将 prometheus 配置文件挂载到容器里
+    ports:
+      - "9090:9090"
+  
+  pushgateway:
+    image: prom/pushgateway:v1.4.3
+    networks:
+      - basic
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "9091:9091"
+  
+  grafana:
+    image: grafana/grafana-oss:8.5.6
+    networks:
+      - basic
+    environment:
+      - TZ=Asia/Shanghai
+    ports:
+      - "3000:3000"

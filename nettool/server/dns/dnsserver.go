@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/wwqdrh/gotoolkit/nettool/common"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
+	"github.com/wwqdrh/gokit/nettool/common"
 )
 
 type DnsServer struct {

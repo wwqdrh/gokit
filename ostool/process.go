@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	ps "github.com/mitchellh/go-ps"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 )
 
 // RunAndWait run cmd

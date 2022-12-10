@@ -2,11 +2,12 @@ package dns
 
 import (
 	"fmt"
-	"github.com/wwqdrh/gotoolkit/nettool/common"
-	"github.com/wwqdrh/logger"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/wwqdrh/gokit/logger"
+	"github.com/wwqdrh/gokit/nettool/common"
 )
 
 // SetNameServer set dns server records

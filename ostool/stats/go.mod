@@ -1,10 +1,10 @@
-module github.com/wwqdrh/gotoolkit/ostool/stats
+module github.com/wwqdrh/gokit/ostool/stats
 
 go 1.18
 
 require (
 	github.com/pkg/errors v0.9.1
-	github.com/wwqdrh/logger v0.0.9
+	github.com/wwqdrh/gokit/logger v0.0.9
 )
 
 require (

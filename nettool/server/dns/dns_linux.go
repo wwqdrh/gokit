@@ -8,8 +8,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/wwqdrh/gotoolkit/nettool/common"
-	"github.com/wwqdrh/gotoolkit/nettool/rules/iptables"
+	"github.com/wwqdrh/gokit/nettool/common"
+	"github.com/wwqdrh/gokit/nettool/rules/iptables"
 )
 
 var (

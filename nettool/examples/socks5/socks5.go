@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/wwqdrh/gotoolkit/nettool/server/ssh"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
+	"github.com/wwqdrh/gokit/nettool/server/ssh"
 )
 
 func main() {

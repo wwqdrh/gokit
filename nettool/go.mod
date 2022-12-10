@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gotoolkit/nettool
+module github.com/wwqdrh/gokit/nettool
 
 go 1.18
 
@@ -7,7 +7,7 @@ require (
 	github.com/miekg/dns v1.1.45
 	github.com/stretchr/testify v1.8.0
 	github.com/tidwall/gjson v1.14.3
-	github.com/wwqdrh/logger v0.0.9
+	github.com/wwqdrh/gokit/logger v0.0.9
 	github.com/wwqdrh/ostool v0.0.0-20221024032333-a4c63e32e8b4
 	github.com/xjasonlyu/tun2socks/v2 v2.4.1
 	go.uber.org/zap v1.21.0

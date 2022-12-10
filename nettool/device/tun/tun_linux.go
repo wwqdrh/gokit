@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/wwqdrh/gotoolkit/nettool/common"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
+	"github.com/wwqdrh/gokit/nettool/common"
 	"github.com/wwqdrh/ostool"
 )
 

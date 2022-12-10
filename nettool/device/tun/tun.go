@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 	"github.com/xjasonlyu/tun2socks/v2/engine"
 	tunLog "github.com/xjasonlyu/tun2socks/v2/log"
 )

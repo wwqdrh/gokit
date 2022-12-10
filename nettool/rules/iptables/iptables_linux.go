@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 	"github.com/wwqdrh/ostool"
 )
 

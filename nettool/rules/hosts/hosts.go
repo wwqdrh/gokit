@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gofrs/flock"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 )
 
 var (

@@ -12,7 +12,7 @@ import (
 	"strconv"
 
 	fs "github.com/fsnotify/fsnotify"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 )
 
 type FileSize int64

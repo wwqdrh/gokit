@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 )
 
 var (

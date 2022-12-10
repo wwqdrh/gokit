@@ -6,7 +6,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 	"go.uber.org/zap"
 	"golang.org/x/net/dns/dnsmessage"
 )

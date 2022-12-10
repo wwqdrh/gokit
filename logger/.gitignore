@@ -1,0 +1,8 @@
+.DS_Store
+logs
+./cover.out
+dev.env
+cover.out
+.vscode
+.tmp
+DEV.md

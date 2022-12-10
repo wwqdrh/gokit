@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 	"github.com/wwqdrh/ostool"
 )
 

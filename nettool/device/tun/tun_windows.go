@@ -2,9 +2,10 @@ package tun
 
 import (
 	"fmt"
-	"github.com/wwqdrh/logger"
 	"os/exec"
 	"strings"
+
+	"github.com/wwqdrh/gokit/logger"
 )
 
 // CheckContext check everything needed for tun setup

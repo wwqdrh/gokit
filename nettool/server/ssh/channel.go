@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wwqdrh/gotoolkit/nettool/server/socks5"
-	"github.com/wwqdrh/gotoolkit/nettool/server/ssh/client"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
+	"github.com/wwqdrh/gokit/nettool/server/socks5"
+	"github.com/wwqdrh/gokit/nettool/server/ssh/client"
 	"golang.org/x/net/proxy"
 )
 

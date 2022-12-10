@@ -2,14 +2,12 @@ package dns
 
 import (
 	"fmt"
-	"github.com/wwqdrh/gotoolkit/nettool/common"
-	"github.com/wwqdrh/logger"
 	"io/ioutil"
 	"os"
-	"os/signal"
-	"strconv"
 	"strings"
-	"syscall"
+
+	"github.com/wwqdrh/gokit/logger"
+	"github.com/wwqdrh/gokit/nettool/common"
 )
 
 const (

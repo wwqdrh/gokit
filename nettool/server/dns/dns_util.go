@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/wwqdrh/logger"
+	"github.com/wwqdrh/gokit/logger"
 )
 
 var (

@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/wwqdrh/gotoolkit/nettool/server/dns"
+	"github.com/wwqdrh/gokit/nettool/server/dns"
 )
 
 // address books
