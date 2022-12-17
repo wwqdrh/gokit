@@ -1,6 +1,9 @@
 package fileindex
 
-import "path"
+import (
+	"path"
+	"strings"
+)
 
 type Entry interface {
 	Id() string
@@ -44,7 +47,7 @@ func (e *entry) IsDir() bool {
 func (e *entry) IsImage() bool {
 	name := e.Name()
 	ext := path.Ext(name)
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".png", ".jpeg", ".jpg":
 		return true
 	default:
@@ -55,7 +58,7 @@ func (e *entry) IsImage() bool {
 func (e *entry) IsVideo() bool {
 	name := e.Name()
 	ext := path.Ext(name)
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".mp4", ".rmvb", ".avi", ".mkv", ".flv", ".wmv", ".mov", ".mpg":
 		return true
 	default:

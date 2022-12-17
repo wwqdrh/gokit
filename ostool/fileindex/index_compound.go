@@ -4,6 +4,7 @@ import (
 	"errors"
 	"path"
 	"sort"
+	"strings"
 )
 
 type compound struct {
@@ -32,7 +33,7 @@ func (e *compoundEntry) IsDir() bool {
 func (e *compoundEntry) IsImage() bool {
 	name := e.Name()
 	ext := path.Ext(name)
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".png", ".jpeg", ".jpg":
 		return true
 	default:
@@ -43,7 +44,7 @@ func (e *compoundEntry) IsImage() bool {
 func (e *compoundEntry) IsVideo() bool {
 	name := e.Name()
 	ext := path.Ext(name)
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".mp4", ".rmvb", ".avi", ".mkv", ".flv", ".wmv", ".mov", ".mpg":
 		return true
 	default:

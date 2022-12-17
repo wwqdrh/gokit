@@ -19,6 +19,6 @@ func TestFileIndex(t *testing.T) {
 	}
 
 	for _, item := range entrys {
-		fmt.Println(item.Name(), item.Path())
+		fmt.Println(item.Name(), item.Path(), item.IsImage())
 	}
 }
