@@ -68,6 +68,28 @@ func (e *memEntry) IsDir() bool {
 	return e.isDir
 }
 
+func (e *memEntry) IsImage() bool {
+	name := e.Name()
+	ext := path.Ext(name)
+	switch ext {
+	case ".png", ".jpeg", ".jpg":
+		return true
+	default:
+		return false
+	}
+}
+
+func (e *memEntry) IsVideo() bool {
+	name := e.Name()
+	ext := path.Ext(name)
+	switch ext {
+	case ".mp4", ".rmvb", ".avi", ".mkv", ".flv", ".wmv", ".mov", ".mpg":
+		return true
+	default:
+		return false
+	}
+}
+
 func (e *memEntry) ParentId() string {
 	return e.parentId
 }
