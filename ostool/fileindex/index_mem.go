@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -71,7 +72,7 @@ func (e *memEntry) IsDir() bool {
 func (e *memEntry) IsImage() bool {
 	name := e.Name()
 	ext := path.Ext(name)
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".png", ".jpeg", ".jpg":
 		return true
 	default:
@@ -82,7 +83,7 @@ func (e *memEntry) IsImage() bool {
 func (e *memEntry) IsVideo() bool {
 	name := e.Name()
 	ext := path.Ext(name)
-	switch ext {
+	switch strings.ToLower(ext) {
 	case ".mp4", ".rmvb", ".avi", ".mkv", ".flv", ".wmv", ".mov", ".mpg":
 		return true
 	default:
