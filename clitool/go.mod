@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gotookit/clitool
+module github.com/wwqdrh/gokit/clitool
 
 go 1.18
 
