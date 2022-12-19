@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/wwqdrh/gokit/clitool"
 	"github.com/wwqdrh/gokit/logger"
-	"github.com/wwqdrh/gotookit/clitool"
 )
 
 var connectFlags = []clitool.OptionConfig{

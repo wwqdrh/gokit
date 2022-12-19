@@ -15,6 +15,7 @@ import (
 
 type OptionConfig struct {
 	Target       string
+	Name         string
 	Alias        string
 	DefaultValue any
 	Description  string
@@ -30,6 +31,9 @@ func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config
 	flags.SortFlags = false
 	for _, c := range config {
 		name := UnCapitalize(c.Target)
+		if c.Name != "" {
+			name = c.Name
+		}
 		field := reflect.ValueOf(optionStore).Elem().FieldByName(c.Target)
 		switch c.DefaultValue.(type) {
 		case string:
