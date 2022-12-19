@@ -20,7 +20,7 @@ func (c *Command) Builder() {
 			SetOptions(c.Cmd, c.Cmd.Flags(), c.Values, c.Options)
 		}
 		if len(c.Persistent) > 0 {
-			SetOptions(c.Cmd, c.Cmd.PersistentFlags(), c.Values, c.Options)
+			SetOptions(c.Cmd, c.Cmd.PersistentFlags(), c.Values, c.Persistent)
 		}
 
 		c.inited = true
