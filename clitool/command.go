@@ -6,19 +6,33 @@ import (
 )
 
 type Command struct {
-	Cmd     *cobra.Command
-	Values  interface{}
-	Options []OptionConfig
+	Cmd        *cobra.Command
+	Values     interface{}
+	Options    []OptionConfig
+	Persistent []OptionConfig
+
+	inited bool
 }
 
 func (c *Command) Builder() {
-	SetOptions(c.Cmd, c.Cmd.Flags(), c.Values, c.Options)
+	if !c.inited {
+		if len(c.Options) > 0 {
+			SetOptions(c.Cmd, c.Cmd.Flags(), c.Values, c.Options)
+		}
+		if len(c.Persistent) > 0 {
+			SetOptions(c.Cmd, c.Cmd.PersistentFlags(), c.Values, c.Options)
+		}
+
+		c.inited = true
+	}
 }
 
 func (c *Command) Add(cmd *Command) {
-	cmd.Builder()
+	c.Builder()
 
 	c.Cmd.AddCommand(cmd.Cmd)
+
+	cmd.Builder()
 }
 
 func (c *Command) Run() {

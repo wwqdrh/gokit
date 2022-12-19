@@ -23,7 +23,6 @@ type OptionConfig struct {
 	Required     bool
 }
 
-// options.SetOptions(cmd, cmd.Flags(), options.Get().Connect, options.ConnectFlags())
 func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config []OptionConfig) {
 	cmd.Long = cmd.Short
 	cmd.Flags().SortFlags = false
