@@ -3,9 +3,9 @@ package common
 import (
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
-	"net/http"
 )
 
 func IpAndMask(cidr string) (string, string, error) {
@@ -33,7 +33,6 @@ func IpNetPart(cidr string) (string, error) {
 	return fmt.Sprintf("%s/%d", ipNet.IP.String(), size), nil
 }
 
-
 func ClientIP(r *http.Request) string {
 	xForwardedFor := r.Header.Get("x-Forwarded-For")
 	ip := strings.TrimSpace(strings.Split(xForwardedFor, ",")[0])
@@ -56,7 +55,12 @@ func ClientIP(r *http.Request) string {
 // 1、10. - 10.
 // 2、172.16 - 172.31
 // 3、192.168 - 192.168
+// 4、127.0.0.1
 func IsLocalIp(ip string) bool {
+	if ip == "127.0.0.1" {
+		return true
+	}
+
 	ipAddr := strings.Split(ip, ".")
 
 	if strings.EqualFold(ipAddr[0], "10") {
