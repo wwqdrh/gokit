@@ -42,7 +42,7 @@ func NewLoggerOption() *LoggerOptions {
 		Console:       true,
 		Switch:        false, // 默认不开启，因为会占用端口
 		SwitchTime:    5 * time.Minute,
-		Caller:        true,
+		Caller:        false,
 		EncoderOut:    "json",
 		EncoderLevel:  "level",
 		EncoderTime:   "time",

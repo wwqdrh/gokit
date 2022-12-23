@@ -1,3 +1,0 @@
-集成pyroscope
-
-依赖于runtime/pprof数据

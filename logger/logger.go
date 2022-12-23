@@ -72,6 +72,10 @@ func Set(name string, Logger *ZapX) {
 	loggerPool.Store(name, Logger)
 }
 
+func SetDefault(Logger *ZapX) {
+	DefaultLogger = Logger
+}
+
 // 获取logger
 func Get(name string) *ZapX {
 	val, ok := loggerPool.Load(name)
