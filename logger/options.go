@@ -18,11 +18,12 @@ type LoggerOptions struct {
 	CtxKey     ctxKey
 
 	// encoder config
-	Level        zapcore.Level
-	Caller       bool   // 是否开启caller位置
-	EncoderOut   string // json plain
-	EncoderLevel string
-	EncoderTime  string
+	Level             zapcore.Level
+	Caller            bool   // 是否开启caller位置
+	EncoderOut        string // json plain
+	EncoderLevel      string
+	EncoderTime       string
+	EncoderTimeLayout string
 
 	// tar
 	LogPath       string // 保存的日志文件
@@ -36,21 +37,22 @@ type option func(*LoggerOptions)
 
 func NewLoggerOption() *LoggerOptions {
 	return &LoggerOptions{
-		Level:         zapcore.InfoLevel,
-		CtxKey:        "logger",
-		Color:         true,
-		Console:       true,
-		Switch:        false, // 默认不开启，因为会占用端口
-		SwitchTime:    5 * time.Minute,
-		Caller:        false,
-		EncoderOut:    "json",
-		EncoderLevel:  "level",
-		EncoderTime:   "time",
-		LogPath:       "",
-		LogMaxSize:    1,
-		LogMaxBackups: 5,
-		LogMaxAge:     1,
-		LogCompress:   false,
+		Level:             zapcore.InfoLevel,
+		CtxKey:            "logger",
+		Color:             true,
+		Console:           true,
+		Switch:            false, // 默认不开启，因为会占用端口
+		SwitchTime:        5 * time.Minute,
+		Caller:            false,
+		EncoderOut:        "json",
+		EncoderLevel:      "level",
+		EncoderTime:       "time",
+		EncoderTimeLayout: "2006-01-02 15:04:05",
+		LogPath:           "",
+		LogMaxSize:        1,
+		LogMaxBackups:     5,
+		LogMaxAge:         1,
+		LogCompress:       false,
 	}
 }
 
@@ -94,6 +96,12 @@ func WithColor(color bool) option {
 func WithEncoderTime(timeKey string) option {
 	return func(lo *LoggerOptions) {
 		lo.EncoderTime = timeKey
+	}
+}
+
+func WithEncoderTimeWithLayout(layout string) option {
+	return func(lo *LoggerOptions) {
+		lo.EncoderTimeLayout = layout
 	}
 }
 

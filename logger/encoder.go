@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/buffer"
@@ -13,7 +14,7 @@ import (
 // \033[1;31;40m    <!--1-高亮显示 31-前景色红色  40-背景色黑色-->
 // \033[0m          <!--采用终端默认设置，即取消颜色设置-->
 var (
-	basic  = []byte("\033[0m")
+	basic  = []byte("\033[0m\n")
 	blue   = []byte("\033[36m")
 	red    = []byte("\033[31m")
 	yellow = []byte("\033[33m")
@@ -36,19 +37,19 @@ func withColorRender(level zapcore.Level, buf *buffer.Buffer) *buffer.Buffer {
 	buffer := new(bytes.Buffer)
 	if level >= zap.ErrorLevel {
 		buffer.Write(red)
-		buffer.Write(buf.Bytes())
+		buffer.Write([]byte(strings.TrimSuffix(buf.String(), "\n")))
 		buffer.Write(basic)
 	} else if level >= zap.WarnLevel {
 		buffer.Write(yellow)
-		buffer.Write(buf.Bytes())
+		buffer.Write([]byte(strings.TrimSuffix(buf.String(), "\n")))
 		buffer.Write(basic)
 	} else if level >= zap.InfoLevel {
 		buffer.Write(blue)
-		buffer.Write(buf.Bytes())
+		buffer.Write([]byte(strings.TrimSuffix(buf.String(), "\n")))
 		buffer.Write(basic)
 	} else {
 		buffer.Write(green)
-		buffer.Write(buf.Bytes())
+		buffer.Write([]byte(strings.TrimSuffix(buf.String(), "\n")))
 		buffer.Write(basic)
 	}
 

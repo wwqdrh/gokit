@@ -16,7 +16,7 @@ var (
 		LineEnding:    zapcore.DefaultLineEnding,
 		EncodeLevel:   zapcore.LowercaseLevelEncoder, // 小写编码器
 		// EncodeLevel:    zapcore.CapitalColorLevelEncoder, //这里可以指定颜色,不过只能处理Level的颜色
-		EncodeTime: zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000"), // 根据环境中的时区来设置
+		// EncodeTime: zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000"), // 根据环境中的时区来设置
 		// EncodeTime:     zapcore.ISO8601TimeEncoder, // ISO8601 UTC 时间格式
 		EncodeDuration: zapcore.SecondsDurationEncoder,
 		EncodeCaller:   zapcore.FullCallerEncoder, // 全路径编码器

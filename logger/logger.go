@@ -62,7 +62,8 @@ func init() {
 		WithName("default"),
 		WithLevel(loggerLevel),
 		WithEncoderLevel(""),
-		WithEncoderTime(""),
+		WithEncoderTime("at"),
+		WithEncoderTimeWithLayout("2006-01-02 15:04:05.000 +08:00"),
 		WithEncoderOut("plain"),
 	)
 }
@@ -115,6 +116,7 @@ func NewLogger(options ...option) *ZapX {
 	config := encoderConfig
 	config.LevelKey = opt.EncoderLevel
 	config.TimeKey = opt.EncoderTime
+	config.EncodeTime = zapcore.TimeEncoderOfLayout(opt.EncoderTimeLayout)
 
 	var (
 		basicEncoder zapcore.Encoder
