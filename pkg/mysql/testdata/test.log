@@ -1,0 +1,18 @@
+
+2022/09/01 14:04:25 /Users/dengronghui/go/pkg/mod/gorm.io/driver/mysql@v1.3.2/migrator.go:228
+[1.440ms] [rows:-] SELECT DATABASE()
+
+2022/09/01 14:04:25 /Users/dengronghui/go/pkg/mod/gorm.io/driver/mysql@v1.3.2/migrator.go:231
+[2.336ms] [rows:1] SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'testdb%' ORDER BY SCHEMA_NAME='testdb' DESC limit 1
+
+2022/09/01 14:04:25 /Users/dengronghui/Documents/Apps/public/httptool/store/mysql/mysql_test.go:34
+[2.434ms] [rows:-] SELECT count(*) FROM information_schema.tables WHERE table_schema = 'testdb' AND table_name = 'test_user' AND table_type = 'BASE TABLE'
+
+2022/09/01 14:04:25 /Users/dengronghui/Documents/Apps/public/httptool/store/mysql/mysql_test.go:34
+[8.590ms] [rows:0] CREATE TABLE `test_user` (`id` bigint AUTO_INCREMENT,`name` longtext,PRIMARY KEY (`id`))
+
+2022/09/01 14:04:25 /Users/dengronghui/Documents/Apps/public/httptool/store/mysql/mysql_test.go:38
+[5.149ms] [rows:1] INSERT INTO `test_user` (`name`) VALUES ('user1')
+
+2022/09/01 14:04:25 /Users/dengronghui/Documents/Apps/public/httptool/store/mysql/mysql_test.go:36
+[4.752ms] [rows:0] drop table test_user;
