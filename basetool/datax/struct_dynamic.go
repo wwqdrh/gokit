@@ -1,7 +1,15 @@
 package datax
 
+////////
+// 当前的反射
+// 1、不能设置方法
+// 2、不能有小写字段、embed字段
+// 3、struct名字为空
+//////
+
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -20,35 +28,41 @@ func NewBuilder() *Builder {
 }
 
 // 添加字段
-func (b *Builder) AddField(field string, typ reflect.Type) *Builder {
-	b.fileId = append(b.fileId, reflect.StructField{Name: field, Type: typ})
+func (b *Builder) AddField(field string, f reflect.StructField) *Builder {
+	b.fileId = append(b.fileId, f)
 	return b
 }
 
 // 根据预先添加的字段构建出结构体
 func (b *Builder) Build() *Struct {
 	stu := reflect.StructOf(b.fileId)
+
 	index := make(map[string]int)
 	for i := 0; i < stu.NumField(); i++ {
 		index[stu.Field(i).Name] = i
 	}
+	fmt.Println(stu.Name())
 	return &Struct{stu, index}
 }
 
-func (b *Builder) AddString(name string) *Builder {
-	return b.AddField(name, reflect.TypeOf(""))
+func (b *Builder) AddString(name, tag string) *Builder {
+	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(""), Tag: reflect.StructTag(tag)})
 }
 
-func (b *Builder) AddBool(name string) *Builder {
-	return b.AddField(name, reflect.TypeOf(true))
+func (b *Builder) AddBool(name, tag string) *Builder {
+	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(true), Tag: reflect.StructTag(tag)})
 }
 
-func (b *Builder) AddInt64(name string) *Builder {
-	return b.AddField(name, reflect.TypeOf(int64(0)))
+func (b *Builder) AddInt64(name, tag string) *Builder {
+	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(int64(0)), Tag: reflect.StructTag(tag)})
 }
 
-func (b *Builder) AddFloat64(name string) *Builder {
-	return b.AddField(name, reflect.TypeOf(float64(1.2)))
+func (b *Builder) AddFloat64(name, tag string) *Builder {
+	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(float64(1.2)), Tag: reflect.StructTag(tag)})
+}
+
+func (b *Builder) AddStruct(name string, v interface{}, tag string, annomus bool) *Builder {
+	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(v), Tag: reflect.StructTag(tag), Anonymous: annomus})
 }
 
 // 实际生成的结构体，基类

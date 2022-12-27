@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gokit/httptool/store/postgresql
+module github.com/wwqdrh/gokit/pkg/postgresql
 
 go 1.18
 

@@ -7,8 +7,8 @@ import (
 
 func TestDynamicStruct(t *testing.T) {
 	pe := NewBuilder().
-		AddString("Name").
-		AddInt64("Age").
+		AddString("Name", "").
+		AddInt64("Age", "").
 		Build()
 	p := pe.New()
 	p.SetString("Name", "你好")

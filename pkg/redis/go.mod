@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gokit/httptool/store/redis
+module github.com/wwqdrh/gokit/pkg/redis
 
 go 1.18
 

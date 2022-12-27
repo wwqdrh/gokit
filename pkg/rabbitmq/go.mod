@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gokit/httptool/store/rabbitmq
+module github.com/wwqdrh/gokit/pkg/rabbitmq
 
 go 1.18
 

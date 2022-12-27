@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gokit/httptool/store/mysql
+module github.com/wwqdrh/gokit/pkg/mysql
 
 go 1.18
 

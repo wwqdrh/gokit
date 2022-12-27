@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gokit/httptool/store/sqlite
+module github.com/wwqdrh/gokit/pkg/sqlite
 
 go 1.18
 

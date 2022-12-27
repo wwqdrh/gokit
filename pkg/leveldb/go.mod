@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gokit/httptool/store/leveldb
+module github.com/wwqdrh/gokit/pkg/leveldb
 
 go 1.18
 

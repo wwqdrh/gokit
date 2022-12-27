@@ -1,4 +1,4 @@
-module github.com/wwqdrh/gokit/httptool/store/etcd
+module github.com/wwqdrh/gokit/pkg/etcd
 
 go 1.18
 
