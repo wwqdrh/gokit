@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"time"
 
 	fs "github.com/fsnotify/fsnotify"
 	"github.com/wwqdrh/gokit/logger"
@@ -156,7 +157,8 @@ func watchPidFile(pidFile string, ch chan os.Signal) {
 	}
 }
 
-func RegisterNotify(ctx context.Context, p string, cb func(fs.Event)) error {
+// interval 完全重新绑定监听的时间间隔，建议设置大一点比较好
+func RegisterNotify(ctx context.Context, p string, interval time.Duration, cb func(fs.Event)) error {
 	// Create new watcher.
 	watcher, err := fs.NewWatcher()
 	if err != nil {
@@ -173,9 +175,23 @@ func RegisterNotify(ctx context.Context, p string, cb func(fs.Event)) error {
 				if !ok {
 					return
 				}
-				if event.Op == fs.Write {
-					cb(event)
+
+				if event.Op == fs.Create {
+					if fileindex.IsDir(event.Name) {
+						if err := watcher.Add(event.Name); err != nil {
+							logger.DefaultLogger.Warn(err.Error())
+						}
+						continue
+					}
+				} else if event.Op == fs.Remove {
+					if fileindex.IsDir(event.Name) {
+						if err := watcher.Remove(event.Name); err != nil {
+							logger.DefaultLogger.Warn(err.Error())
+						}
+						continue
+					}
 				}
+				cb(event)
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
@@ -188,20 +204,42 @@ func RegisterNotify(ctx context.Context, p string, cb func(fs.Event)) error {
 		}
 	}()
 
-	// Add a path.
-	if err := watcher.Add(p); err != nil {
-		return err
-	}
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
 
-	res, err := fileindex.GetAllDir(p, []string{})
-	if err != nil {
-		return err
-	}
-	for _, item := range res {
-		if err := watcher.Add(item); err != nil {
-			logger.DefaultLogger.Warn(err.Error())
+		updatesub := func() {
+			for _, item := range watcher.WatchList() {
+				watcher.Remove(item)
+			}
+
+			if err := watcher.Add(p); err != nil {
+				logger.DefaultLogger.Warn(err.Error())
+				return
+			}
+			res, err := fileindex.GetAllDir(p, []string{})
+			if err != nil {
+				logger.DefaultLogger.Warn(err.Error())
+				return
+			}
+			for _, item := range res {
+				if err := watcher.Add(item); err != nil {
+					logger.DefaultLogger.Warn(err.Error())
+				}
+			}
 		}
-	}
+
+		updatesub()
+		for {
+			select {
+			case <-ticker.C:
+				updatesub()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
 	return nil
 }
 

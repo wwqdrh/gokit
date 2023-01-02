@@ -90,6 +90,15 @@ func IsSubDir(basePath, targetPath string) bool {
 	return true
 }
 
+func IsDir(p string) bool {
+	info, err := os.Stat(p)
+	if err != nil {
+		logger.DefaultLogger.Warn(err.Error())
+		return false
+	}
+	return info.IsDir()
+}
+
 func GetAllDir(pathname string, s []string) ([]string, error) {
 	rd, err := ioutil.ReadDir(pathname)
 	if err != nil {
@@ -112,9 +121,12 @@ func GetAllDir(pathname string, s []string) ([]string, error) {
 }
 
 func GetAllFile(source string, prefix bool) ([]string, error) {
-	source = strings.TrimLeft(source, "./")
-	dirStack := []string{source}
+	var err error
+	if source, err = filepath.Abs(source); err != nil {
+		return nil, err
+	}
 
+	dirStack := []string{source}
 	res := []string{}
 	for len(dirStack) > 0 {
 		cur := dirStack[0]
