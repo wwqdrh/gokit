@@ -1,10 +1,12 @@
 package ostool
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"mime/multipart"
 	"os"
@@ -13,6 +15,7 @@ import (
 
 	fs "github.com/fsnotify/fsnotify"
 	"github.com/wwqdrh/gokit/logger"
+	"github.com/wwqdrh/gokit/ostool/fileindex"
 )
 
 type FileSize int64
@@ -151,6 +154,55 @@ func watchPidFile(pidFile string, ch chan os.Signal) {
 			ch <- os.Interrupt
 		}
 	}
+}
+
+func RegisterNotify(ctx context.Context, p string, cb func(fs.Event)) error {
+	// Create new watcher.
+	watcher, err := fs.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Start listening for events.
+	go func() {
+		defer watcher.Close()
+
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op == fs.Write {
+					cb(event)
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			case <-ctx.Done():
+				logger.DefaultLogger.Info("停止监听")
+				return
+			}
+		}
+	}()
+
+	// Add a path.
+	if err := watcher.Add(p); err != nil {
+		return err
+	}
+
+	res, err := fileindex.GetAllDir(p, []string{})
+	if err != nil {
+		return err
+	}
+	for _, item := range res {
+		if err := watcher.Add(item); err != nil {
+			logger.DefaultLogger.Warn(err.Error())
+		}
+	}
+	return nil
 }
 
 // FixFileOwner set owner to original user when run with sudo
