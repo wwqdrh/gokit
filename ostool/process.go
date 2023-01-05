@@ -2,6 +2,8 @@ package ostool
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -22,6 +24,47 @@ func RunAndWait(cmd *exec.Cmd) (string, string, error) {
 	cmd.Stderr = &errBuf
 	logger.DefaultLogger.Debugx("Task %s with args %+v", nil, cmd.Path, cmd.Args)
 	err := cmd.Run()
+	return outBuf.String(), errBuf.String(), err
+}
+
+func PipeCommands(commands ...*exec.Cmd) ([]byte, error) {
+	for i, command := range commands[:len(commands)-1] {
+		out, err := command.StdoutPipe()
+		if err != nil {
+			return nil, err
+		}
+		command.Start()
+		commands[i+1].Stdin = out
+	}
+	final, err := commands[len(commands)-1].Output()
+	if err != nil {
+		return nil, err
+	}
+	return final, nil
+}
+
+// TODO: 为stdin添加eof，否则部分程序是会一直等待stdin
+func RunAndWaitWithIn(cmd *exec.Cmd, in string) (string, string, error) {
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", "", err
+	}
+	defer stdin.Close() // the doc says subProcess.Wait will close it, but I'm not sure, so I kept this line
+
+	var outBuf bytes.Buffer
+	var errBuf bytes.Buffer
+	cmd.Stdout = &outBuf
+	cmd.Stderr = &errBuf
+	logger.DefaultLogger.Debugx("Task %s with args %+v", nil, cmd.Path, cmd.Args)
+	if err = cmd.Start(); err != nil { //Use start, not run
+		return "", "", fmt.Errorf("an error occured: %w", err)
+	}
+	io.WriteString(stdin, in)
+	io.WriteString(stdin, "\n")
+	if err := stdin.Close(); err != nil {
+		return "", "", err
+	}
+	cmd.Wait()
 	return outBuf.String(), errBuf.String(), err
 }
 
