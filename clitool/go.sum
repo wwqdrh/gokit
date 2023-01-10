@@ -29,8 +29,8 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMTY=
-github.com/wwqdrh/gokit/logger v0.0.0-20221210090850-b0828e57b1c4 h1:gfNeURI9DOtmk2u2yx99jYhZXZLmSj7921NdHAgpAiI=
-github.com/wwqdrh/gokit/logger v0.0.0-20221210090850-b0828e57b1c4/go.mod h1:LYZU9Gswd8tHJUGonx0Gl5NDuTHhn5Gp+00yK7Xyhyw=
+github.com/wwqdrh/gokit/logger v0.0.0-20230110113840-8df6b5170dd7 h1:dWqt3ZNbmsitqxseNvaygHZk9OH45eb7IMPuWbe6k2U=
+github.com/wwqdrh/gokit/logger v0.0.0-20230110113840-8df6b5170dd7/go.mod h1:JB9s4BYInScUnk6jADrdaJuIXbSAOzHtrJZlCqKrqBw=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.9.0 h1:ECmE8Bn/WFTYwEW/bpKD3M8VtR/zQVbavAoalC1PYyE=

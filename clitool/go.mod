@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
-	github.com/wwqdrh/gokit/logger v0.0.0-20221210090850-b0828e57b1c4
+	github.com/wwqdrh/gokit/logger v0.0.0-20230110113840-8df6b5170dd7
 	gopkg.in/yaml.v2 v2.4.0
 )
 
