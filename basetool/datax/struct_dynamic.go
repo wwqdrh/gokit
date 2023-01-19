@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 var (
@@ -28,7 +29,7 @@ func NewBuilder() *Builder {
 }
 
 // 添加字段
-func (b *Builder) AddField(field string, f reflect.StructField) *Builder {
+func (b *Builder) AddField(f reflect.StructField) *Builder {
 	b.fileId = append(b.fileId, f)
 	return b
 }
@@ -46,23 +47,23 @@ func (b *Builder) Build() *Struct {
 }
 
 func (b *Builder) AddString(name, tag string) *Builder {
-	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(""), Tag: reflect.StructTag(tag)})
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(""), Tag: reflect.StructTag(tag)})
 }
 
 func (b *Builder) AddBool(name, tag string) *Builder {
-	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(true), Tag: reflect.StructTag(tag)})
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(true), Tag: reflect.StructTag(tag)})
 }
 
 func (b *Builder) AddInt64(name, tag string) *Builder {
-	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(int64(0)), Tag: reflect.StructTag(tag)})
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(int64(0)), Tag: reflect.StructTag(tag)})
 }
 
 func (b *Builder) AddFloat64(name, tag string) *Builder {
-	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(float64(1.2)), Tag: reflect.StructTag(tag)})
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(float64(1.2)), Tag: reflect.StructTag(tag)})
 }
 
 func (b *Builder) AddStruct(name string, v interface{}, tag string, annomus bool) *Builder {
-	return b.AddField(name, reflect.StructField{Name: name, Type: reflect.TypeOf(v), Tag: reflect.StructTag(tag), Anonymous: annomus})
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(v), Tag: reflect.StructTag(tag), Anonymous: annomus})
 }
 
 // 实际生成的结构体，基类
@@ -85,7 +86,7 @@ type Instance struct {
 }
 
 func (in Instance) Field(name string) (reflect.Value, error) {
-	if i, ok := in.index[name]; ok {
+	if i, ok := in.index[strings.ToUpper(name)]; ok {
 		return in.instance.Field(i), nil
 	} else {
 		return reflect.Value{}, ErrFieldNoExist
@@ -93,25 +94,25 @@ func (in Instance) Field(name string) (reflect.Value, error) {
 }
 
 func (in *Instance) SetString(name, value string) {
-	if i, ok := in.index[name]; ok {
+	if i, ok := in.index[strings.ToUpper(name)]; ok {
 		in.instance.Field(i).SetString(value)
 	}
 }
 
 func (in *Instance) SetBool(name string, value bool) {
-	if i, ok := in.index[name]; ok {
+	if i, ok := in.index[strings.ToUpper(name)]; ok {
 		in.instance.Field(i).SetBool(value)
 	}
 }
 
 func (in *Instance) SetInt64(name string, value int64) {
-	if i, ok := in.index[name]; ok {
+	if i, ok := in.index[strings.ToUpper(name)]; ok {
 		in.instance.Field(i).SetInt(value)
 	}
 }
 
 func (in *Instance) SetFloat64(name string, value float64) {
-	if i, ok := in.index[name]; ok {
+	if i, ok := in.index[strings.ToUpper(name)]; ok {
 		in.instance.Field(i).SetFloat(value)
 	}
 }
