@@ -21,6 +21,7 @@ type OptionConfig struct {
 	Description  string
 	Hidden       bool
 	Required     bool
+	Persistent   bool
 }
 
 func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config []OptionConfig) {
@@ -34,6 +35,7 @@ func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config
 			name = c.Name
 		}
 		field := reflect.ValueOf(optionStore).Elem().FieldByName(c.Target)
+
 		switch c.DefaultValue.(type) {
 		case string:
 			fieldPtr := (*string)(unsafe.Pointer(field.UnsafeAddr()))

@@ -8,12 +8,16 @@ import (
 )
 
 var Opt = struct {
-	Name string
+	Name string `name:"name" persistent:"true"`
 }{}
 
 var SubOpt = struct {
-	Data string
-}{}
+	Echo bool   `name:"echo" alias:"e"`
+	Data string `name:"data" desc:"docker swarm集群中的shadow服务地址"`
+}{
+	Echo: false,
+	Data: "hh213",
+}
 
 func main() {
 	cmd := clitool.Command{
@@ -26,14 +30,6 @@ func main() {
 			},
 			Example: "ktctl connect [command options]",
 		},
-		Persistent: []clitool.OptionConfig{
-			{
-				Target:       "Name",
-				Name:         "name",
-				DefaultValue: "127.0.0.1:18080",
-				Description:  "docker swarm集群中的shadow服务地址",
-			},
-		},
 		Values: &Opt,
 	}
 
@@ -42,16 +38,10 @@ func main() {
 			Use:   "sub",
 			Short: "sub",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				fmt.Println(Opt.Name, SubOpt.Data)
+				if SubOpt.Echo {
+					fmt.Println(Opt.Name, SubOpt.Data)
+				}
 				return nil
-			},
-		},
-		Options: []clitool.OptionConfig{
-			{
-				Target:       "Data",
-				Name:         "data",
-				DefaultValue: "12data0",
-				Description:  "docker swarm集群中的shadow服务地址",
 			},
 		},
 		Values: &SubOpt,
