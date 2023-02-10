@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/wwqdrh/gokit/logger"
 )
 
 var (
@@ -83,6 +85,33 @@ type Instance struct {
 	instance reflect.Value
 	// <fieldName : 索引>
 	index map[string]int
+}
+
+func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
+	res := map[string]interface{}{}
+
+	for field, fieldType := range dataType {
+		val, err := in.Field(field)
+		if err != nil {
+			logger.DefaultLogger.Warn(err.Error())
+			continue
+		}
+
+		switch fieldType {
+		case "string":
+			res[field] = val.String()
+		case "bool":
+			res[field] = val.Bool()
+		case "int":
+			res[field] = val.Int()
+		case "float":
+			res[field] = val.Float()
+		default:
+			logger.DefaultLogger.Warn("dont support this type")
+		}
+	}
+
+	return res
 }
 
 func (in Instance) Field(name string) (reflect.Value, error) {
