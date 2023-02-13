@@ -10,12 +10,13 @@ type ctxKey string
 
 type LoggerOptions struct {
 	// 基础配置
-	Name       string
-	Color      bool
-	Console    bool // 如非必要不输出到控制台，例如开启fluentd就不需要输出，除非是fluentd失败
-	Switch     bool // 是否支持动态修改等级
-	SwitchTime time.Duration
-	CtxKey     ctxKey
+	Name        string
+	Color       bool
+	Console     bool // 如非必要不输出到控制台，例如开启fluentd就不需要输出，除非是fluentd失败
+	Switch      bool // 是否支持动态修改等级
+	SwitchTime  time.Duration
+	CtxKey      ctxKey
+	DefaultName string // 指定了日志存储目录之后，如果在执行日志操作时不指定使用哪个label的话，默认会使用的名字
 
 	// encoder config
 	Level             zapcore.Level
@@ -38,6 +39,7 @@ type option func(*LoggerOptions)
 func NewLoggerOption() *LoggerOptions {
 	return &LoggerOptions{
 		Level:             zapcore.InfoLevel,
+		DefaultName:       "default.txt",
 		CtxKey:            "logger",
 		Color:             true,
 		Console:           true,
@@ -59,6 +61,12 @@ func NewLoggerOption() *LoggerOptions {
 func WithName(name string) option {
 	return func(lo *LoggerOptions) {
 		lo.Name = name
+	}
+}
+
+func WithDefaultLogName(name string) option {
+	return func(lo *LoggerOptions) {
+		lo.DefaultName = name
 	}
 }
 

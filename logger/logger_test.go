@@ -24,7 +24,7 @@ func TestExampleCustomLogger(t *testing.T) {
 	// info级别 with name
 	l := NewLogger(
 		WithLevel(zapcore.DebugLevel),
-		WithLogPath("./logs/info.log"),
+		WithLogPath("./logs/info"),
 		WithName("info"),
 		WithCaller(true),
 		WithConsole(false),
@@ -35,6 +35,10 @@ func TestExampleCustomLogger(t *testing.T) {
 	l.Error("this is error")
 	Get("info").Debug("this is a debug message")
 	Get("info").Info("this is a info message")
+
+	l.WithLabel("app1").Info("this is app1 logger")
+
+	Get("info_app1").Info("this is app1 logger by get")
 
 	// switch debug level
 	s := switchLevel("info")

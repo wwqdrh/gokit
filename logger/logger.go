@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"sync"
 	"time"
 
@@ -39,7 +40,8 @@ var (
 type ZapX struct {
 	*zap.Logger
 
-	opts *LoggerOptions
+	opts   *LoggerOptions
+	rawOpt []option
 }
 
 func NewZapX(l *zap.Logger) *ZapX {
@@ -160,10 +162,10 @@ func NewLogger(options ...option) *ZapX {
 	// 是否保存到文件中
 	if opt.LogPath != "" {
 		r := &lumberjack.Logger{
-			Filename:   opt.LogPath,       //日志文件存放目录，如果文件夹不存在会自动创建
-			MaxSize:    opt.LogMaxSize,    //文件大小限制,单位MB
-			MaxBackups: opt.LogMaxBackups, //最大保留日志文件数量
-			MaxAge:     opt.LogMaxAge,     //日志文件保留天数
+			Filename:   path.Join(opt.LogPath, opt.DefaultName), //日志文件存放目录，如果文件夹不存在会自动创建
+			MaxSize:    opt.LogMaxSize,                          //文件大小限制,单位MB
+			MaxBackups: opt.LogMaxBackups,                       //最大保留日志文件数量
+			MaxAge:     opt.LogMaxAge,                           //日志文件保留天数
 			LocalTime:  true,
 			Compress:   opt.LogCompress, //是否压缩处理
 		}
@@ -183,9 +185,27 @@ func NewLogger(options ...option) *ZapX {
 	logx := &ZapX{
 		Logger: l,
 		opts:   opt,
+		rawOpt: options,
 	}
 	loggerPool.Store(opt.Name, logx)
 	return logx
+}
+
+// 写进到logpath下的[label].txt
+func (l *ZapX) WithLabel(label string) *ZapX {
+	name := fmt.Sprintf("%s_%s", l.opts.Name, label)
+	val, ok := loggerPool.Load(name)
+	if ok {
+		return val.(*ZapX)
+	}
+
+	childOpt := append([]option{}, l.rawOpt...)
+	childOpt = append(childOpt, WithName(name), WithDefaultLogName(label+".txt"))
+
+	childlogger := NewLogger(childOpt...)
+	loggerPool.Store(name, childlogger)
+
+	return childlogger
 }
 
 func (l *ZapX) GetCtx(ctx context.Context) *ZapX {
