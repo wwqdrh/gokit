@@ -147,9 +147,10 @@ func HandlerLogTail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logpath := l.(*ZapX).opts.LogPath
-
 	// check log is exist?
-	file := path.Join(logpath, name, label+".txt")
+	file := path.Join(logpath, label+".txt")
+	DefaultLogger.Debugx("cat log data %s", nil, file)
+
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		if err := ws.WriteMessage(websocket.TextMessage, []byte("log error: 日志文件不存在")); err != nil {
 			DefaultLogger.Error(err.Error())
