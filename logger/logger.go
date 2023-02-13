@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"sync"
@@ -11,6 +12,14 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
+)
+
+var (
+	handler *http.Server
+
+	mux = http.NewServeMux()
+
+	handlerOnce = sync.Once{}
 )
 
 var (
@@ -67,6 +76,8 @@ func init() {
 		WithEncoderTime("at"),
 		WithEncoderTimeWithLayout("2006-01-02 15:04:05.000 +08:00"),
 		WithEncoderOut("plain"),
+		WithHTTPMetrices(false),
+		WithSwitch(false, 1*time.Second),
 	)
 }
 
@@ -144,7 +155,7 @@ func NewLogger(options ...option) *ZapX {
 		})
 		priority = atomicLevel.Enabled
 
-		StartHandler()
+		// StartHandler()
 		// 注册级别更改监听
 		switchWatch(opt.Name)
 	} else {
@@ -188,12 +199,15 @@ func NewLogger(options ...option) *ZapX {
 		rawOpt: options,
 	}
 	loggerPool.Store(opt.Name, logx)
+
+	logx.starthandler(logx.opts.HttpMetrices, logx.opts.Switch, logx.opts.HttpPort)
+
 	return logx
 }
 
 // 写进到logpath下的[label].txt
 func (l *ZapX) WithLabel(label string) *ZapX {
-	name := fmt.Sprintf("%s_%s", l.opts.Name, label)
+	name := fmt.Sprintf("@%s@%s", l.opts.Name, label)
 	val, ok := loggerPool.Load(name)
 	if ok {
 		return val.(*ZapX)
@@ -206,6 +220,35 @@ func (l *ZapX) WithLabel(label string) *ZapX {
 	loggerPool.Store(name, childlogger)
 
 	return childlogger
+}
+
+func (l *ZapX) starthandler(withMetrices, withSwitch bool, port int) {
+	if !withMetrices && !withSwitch {
+		return
+	}
+
+	handlerOnce.Do(func() {
+		// 创建服务器
+		if withMetrices {
+			EnableMetrices(mux)
+		}
+
+		if withSwitch {
+			EnableSwitch(mux)
+		}
+
+		handler = &http.Server{
+			Addr:         fmt.Sprintf(":%d", port),
+			WriteTimeout: time.Second * 3,
+			Handler:      mux,
+		}
+
+		go func() {
+			if err := handler.ListenAndServe(); err != nil {
+				DefaultLogger.Error(err.Error())
+			}
+		}()
+	})
 }
 
 func (l *ZapX) GetCtx(ctx context.Context) *ZapX {

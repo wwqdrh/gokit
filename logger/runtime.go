@@ -10,22 +10,12 @@ import (
 )
 
 var (
-	handler *http.Server
-
-	keyFn       = sync.Map{} // string, func(zapcore.Level)
-	handlerOnce = sync.Once{}
+	keyFn = sync.Map{} // string, func(zapcore.Level)
 )
 
 type switchFn func(zapcore.Level)
 
-func StartHandler() {
-	handlerOnce.Do(func() {
-		handlerDo()
-	})
-}
-
-func handlerDo() {
-	mux := http.NewServeMux()
+func EnableSwitch(mux *http.ServeMux) {
 	// 设置路由规则
 	mux.HandleFunc("/setlevel", func(w http.ResponseWriter, r *http.Request) {
 		key, level := r.URL.Query().Get("key"), r.URL.Query().Get("level")
@@ -50,18 +40,6 @@ func handlerDo() {
 			fn(lev)
 		}
 	})
-	// 创建服务器
-	handler = &http.Server{
-		Addr:         ":5000",
-		WriteTimeout: time.Second * 3,
-		Handler:      mux,
-	}
-
-	go func() {
-		if err := handler.ListenAndServe(); err != nil {
-			DefaultLogger.Error(err.Error())
-		}
-	}()
 }
 
 // 保证日志刷入到磁盘不会丢失
