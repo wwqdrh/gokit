@@ -86,8 +86,14 @@ func Set(name string, Logger *ZapX) {
 	loggerPool.Store(name, Logger)
 }
 
-func SetDefault(Logger *ZapX) {
-	DefaultLogger = Logger
+// func SetDefault(Logger *ZapX) {
+// 	DefaultLogger = Logger
+// }
+
+func SetDefaultWithOpt(options ...option) {
+	loggerPool.Delete("default")
+
+	DefaultLogger = NewLogger(append(options, func(lo *LoggerOptions) { lo.Name = "default" })...)
 }
 
 // 获取logger
