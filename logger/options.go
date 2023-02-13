@@ -87,6 +87,13 @@ func WithHTTPMetrices(enable bool) option {
 	}
 }
 
+func WithEngine(engine func(string, http.HandlerFunc)) option {
+	return func(lo *LoggerOptions) {
+		lo.HttpEngine = engine
+		lo.InternalEngine = false
+	}
+}
+
 func WithPort(port int) option {
 	return func(lo *LoggerOptions) {
 		lo.HttpPort = port
