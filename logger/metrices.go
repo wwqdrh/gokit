@@ -137,8 +137,19 @@ func HandlerLogTail(w http.ResponseWriter, r *http.Request) {
 		label = "default.txt"
 	}
 
+	l, ok := loggerPool.Load(name)
+	if !ok {
+		w.WriteHeader(400)
+		if _, err := w.Write([]byte("该logger不存在")); err != nil {
+			DefaultLogger.Error(err.Error())
+		}
+		return
+	}
+
+	logpath := l.(*ZapX).opts.LogPath
+
 	// check log is exist?
-	file := path.Join(name, label+".txt")
+	file := path.Join(logpath, name, label+".txt")
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		if err := ws.WriteMessage(websocket.TextMessage, []byte("log error: 日志文件不存在")); err != nil {
 			DefaultLogger.Error(err.Error())
