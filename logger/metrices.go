@@ -37,7 +37,7 @@ func HandlerLogList(w http.ResponseWriter, r *http.Request) {
 	names := []string{}
 	loggerPool.Range(func(key, value any) bool {
 		n := key.(string)
-		if !strings.HasPrefix(n, "@") {
+		if !strings.HasPrefix(n, "@") && n != "" {
 			names = append(names, key.(string))
 		}
 		return true
@@ -80,7 +80,9 @@ func HandlerLogLabelList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if items, err := os.ReadDir(l.(*ZapX).opts.LogPath); err != nil {
+	logpath := l.(*ZapX).opts.LogPath
+	DefaultLogger.Debugx("listdir %s", nil, logpath)
+	if items, err := os.ReadDir(logpath); err != nil {
 		w.WriteHeader(500)
 		if _, err := w.Write([]byte(err.Error())); err != nil {
 			DefaultLogger.Error(err.Error())
@@ -89,7 +91,7 @@ func HandlerLogLabelList(w http.ResponseWriter, r *http.Request) {
 		labels := []string{}
 		for _, item := range items {
 			if !item.IsDir() && strings.HasSuffix(item.Name(), ".txt") {
-				labels = append(labels, strings.TrimRight(item.Name(), ".txt"))
+				labels = append(labels, strings.TrimSuffix(item.Name(), ".txt"))
 			}
 		}
 		if body, err := json.Marshal(labels); err != nil {
