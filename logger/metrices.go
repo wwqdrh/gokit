@@ -26,10 +26,10 @@ type connNode struct {
 	done chan bool
 }
 
-func EnableMetrices(mux *http.ServeMux) {
-	mux.HandleFunc("/api/log/list", HandlerLogList)
-	mux.HandleFunc("/api/log/label/list", HandlerLogLabelList)
-	mux.HandleFunc("/api/log/tail", HandlerLogTail)
+func EnableMetrices(register func(string, http.HandlerFunc)) {
+	register("/api/log/list", HandlerLogList)
+	register("/api/log/label/list", HandlerLogLabelList)
+	register("/api/log/tail", HandlerLogTail)
 }
 
 // 获取有哪些日志类型

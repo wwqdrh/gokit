@@ -15,9 +15,9 @@ var (
 
 type switchFn func(zapcore.Level)
 
-func EnableSwitch(mux *http.ServeMux) {
+func EnableSwitch(register func(string, http.HandlerFunc)) {
 	// 设置路由规则
-	mux.HandleFunc("/setlevel", func(w http.ResponseWriter, r *http.Request) {
+	register("/setlevel", func(w http.ResponseWriter, r *http.Request) {
 		key, level := r.URL.Query().Get("key"), r.URL.Query().Get("level")
 
 		fnI, ok := keyFn.Load(key)

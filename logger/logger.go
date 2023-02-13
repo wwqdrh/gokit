@@ -200,7 +200,7 @@ func NewLogger(options ...option) *ZapX {
 	}
 	loggerPool.Store(opt.Name, logx)
 
-	logx.starthandler(logx.opts.HttpMetrices, logx.opts.Switch, logx.opts.HttpPort)
+	logx.starthandler(logx.opts)
 
 	return logx
 }
@@ -222,32 +222,35 @@ func (l *ZapX) WithLabel(label string) *ZapX {
 	return childlogger
 }
 
-func (l *ZapX) starthandler(withMetrices, withSwitch bool, port int) {
-	if !withMetrices && !withSwitch {
+func (l *ZapX) starthandler(opt *LoggerOptions) {
+	if !opt.HttpMetrices && !opt.Switch {
 		return
 	}
 
 	handlerOnce.Do(func() {
 		// 创建服务器
-		if withMetrices {
-			EnableMetrices(mux)
+		if opt.HttpMetrices {
+			EnableMetrices(opt.HttpEngine)
 		}
 
-		if withSwitch {
-			EnableSwitch(mux)
+		if opt.HttpMetrices {
+			EnableSwitch(opt.HttpEngine)
 		}
 
-		handler = &http.Server{
-			Addr:         fmt.Sprintf(":%d", port),
-			WriteTimeout: time.Second * 3,
-			Handler:      mux,
-		}
-
-		go func() {
-			if err := handler.ListenAndServe(); err != nil {
-				DefaultLogger.Error(err.Error())
+		// 启用内部handler
+		if opt.InternalEngine {
+			handler = &http.Server{
+				Addr:         fmt.Sprintf(":%d", opt.HttpPort),
+				WriteTimeout: time.Second * 3,
+				Handler:      mux,
 			}
-		}()
+
+			go func() {
+				if err := handler.ListenAndServe(); err != nil {
+					DefaultLogger.Error(err.Error())
+				}
+			}()
+		}
 	})
 }
 
