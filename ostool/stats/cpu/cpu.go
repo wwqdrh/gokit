@@ -1,5 +1,12 @@
 package cpu
 
+import (
+	"fmt"
+	"time"
+
+	psutilcpu "github.com/shirou/gopsutil/v3/cpu"
+)
+
 var (
 	maxFreq uint64
 	quota   float64
@@ -17,6 +24,19 @@ func GetInfo() Info {
 		Frequency: maxFreq,
 		Quota:     quota,
 	}
+}
+
+func GetCpuPercent() float64 {
+	// use cpu.Percent to get the total cpu usage percentage
+	// pass 0 as the first argument to get a single value
+	// pass false as the second argument to get the total percentage
+	usage, err := psutilcpu.Percent(500*time.Millisecond, false)
+	if err != nil {
+		fmt.Println(err)
+		return 0
+	}
+	// cpu.Percent returns a slice of float64, use the first element
+	return usage[0]
 }
 
 //GetClockTicks get the OS's ticks per second

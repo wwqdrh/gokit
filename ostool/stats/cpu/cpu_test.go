@@ -13,6 +13,10 @@ func TestUsageSysetmCPU(t *testing.T) {
 	}
 }
 
+func TestGetCpuPercent(t *testing.T) {
+	fmt.Println(GetCpuPercent())
+}
+
 func TestStatCpuFreq(t *testing.T) {
 	fmt.Println(StatCpuFreq())
 }
