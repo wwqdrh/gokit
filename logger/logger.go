@@ -236,10 +236,10 @@ func (l *ZapX) starthandler(opt *LoggerOptions) {
 	handlerOnce.Do(func() {
 		// 创建服务器
 		if opt.HttpMetrices {
-			EnableMetrices(opt.HttpEngine)
+			EnableMetrices(opt.HttpPrefix, opt.HttpEngine)
 		}
 
-		if opt.HttpMetrices {
+		if opt.Switch {
 			EnableSwitch(opt.HttpEngine)
 		}
 
@@ -272,6 +272,18 @@ func (l *ZapX) AddCtx(ctx context.Context, field ...zap.Field) (context.Context,
 	log := &ZapX{Logger: l.With(field...), opts: l.opts}
 	ctx = context.WithValue(ctx, l.opts.CtxKey, log)
 	return ctx, log
+}
+
+func (l *ZapX) GetLogListUrl() string {
+	return l.opts.HttpPrefix + UrlLogList
+}
+
+func (l *ZapX) GetLogLabelListUrl() string {
+	return l.opts.HttpPrefix + UrlLogLabelList
+}
+
+func (l *ZapX) GetLogTailurl() string {
+	return l.opts.HttpPrefix + UrlLogTail
 }
 
 func (l *ZapX) WithContext(ctx context.Context) *ZapX {

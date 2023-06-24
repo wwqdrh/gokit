@@ -14,6 +14,10 @@ import (
 
 var (
 	tailHandler = map[string]*tailInfo{} // 文件名与channel的映射
+
+	UrlLogList      = "/api/log/list"
+	UrlLogLabelList = "/api/log/label/list"
+	UrlLogTail      = "/api/log/tail"
 )
 
 type tailInfo struct {
@@ -26,10 +30,10 @@ type connNode struct {
 	done chan bool
 }
 
-func EnableMetrices(register func(string, http.HandlerFunc)) {
-	register("/api/log/list", HandlerLogList)
-	register("/api/log/label/list", HandlerLogLabelList)
-	register("/api/log/tail", HandlerLogTail)
+func EnableMetrices(prefix string, register func(string, http.HandlerFunc)) {
+	register(prefix+UrlLogList, HandlerLogList)
+	register(prefix+UrlLogLabelList, HandlerLogLabelList)
+	register(prefix+UrlLogTail, HandlerLogTail)
 }
 
 // 获取有哪些日志类型

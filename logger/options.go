@@ -21,7 +21,8 @@ type LoggerOptions struct {
 	HttpMetrices   bool                           // 是否开启http接口，用于追踪当前日志
 	HttpPort       int                            // 运行http接口的端口号
 	HttpEngine     func(string, http.HandlerFunc) // 如何注册handler的
-	InternalEngine bool                           // 是否启用的内部engine
+	HttpPrefix     string
+	InternalEngine bool // 是否启用的内部engine
 
 	// encoder config
 	Level             zapcore.Level
@@ -109,6 +110,12 @@ func WithCtxKey(key ctxKey) option {
 func WithLevel(level zapcore.Level) option {
 	return func(lo *LoggerOptions) {
 		lo.Level = level
+	}
+}
+
+func WithHTTPPrefix(prefix string) option {
+	return func(lo *LoggerOptions) {
+		lo.HttpPrefix = prefix
 	}
 }
 
