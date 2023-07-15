@@ -20,6 +20,22 @@ func TestDefaultLogger(t *testing.T) {
 	DefaultLogger.Errorx("this is a %s message", nil, "errorx")
 }
 
+func TestNullLogger(t *testing.T) {
+	// l := NewNullLogger()
+	// l.Info("this is a info message")
+	// l.Error("this is a error message")
+
+	// l.Infox("this is a %s message", nil, "infox")
+	// l.Errorx("this is a %s message", nil, "errorx")
+
+	l2 := NewMiniLogger()
+	l2.Info("this is a info message")
+	l2.Error("this is a error message")
+
+	l2.Infox("this is a %s message", nil, "infox")
+	l2.Errorx("this is a %s message", nil, "errorx")
+}
+
 func TestExampleCustomLogger(t *testing.T) {
 	// info级别 with name
 	l := NewLogger(

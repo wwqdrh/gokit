@@ -69,26 +69,59 @@ func init() {
 		loggerLevel = val
 	}
 
-	DefaultLogger = NewLogger(
+	DefaultLogger = NewBasicLogger()
+}
+
+// [info]
+func NewMiniLogger(options ...option) *ZapX {
+	opt := append([]option{
+		WithName("mini"),
+		WithLevel(loggerLevel),
+		WithEncoderLevel(""),
+		WithEncoderTime(""),
+		WithEncoderOut("plain"),
+	}, options...)
+	return NewLogger(
+		opt...,
+	)
+}
+
+// [time] [info]
+func NewBasicLogger(options ...option) *ZapX {
+	opt := append([]option{
 		WithName("default"),
 		WithLevel(loggerLevel),
 		WithEncoderLevel(""),
 		WithEncoderTime("at"),
-		WithEncoderTimeWithLayout("2006-01-02 15:04:05.000 +08:00"),
+		WithEncoderTimeWithLayout("2006-01-02 15:04:05.000"),
 		WithEncoderOut("plain"),
 		WithHTTPMetrices(false),
 		WithSwitch(false, 1*time.Second),
+	}, options...)
+
+	return NewLogger(
+		opt...,
+	)
+}
+
+// null
+func NewNullLogger(options ...option) *ZapX {
+	opt := append([]option{
+		WithName("null"),
+		WithConsole(false),
+	}, options...)
+	return NewLogger(
+		opt...,
 	)
 }
 
 // 设置logger
 func Set(name string, Logger *ZapX) {
+	if name == "default" {
+		DefaultLogger = Logger
+	}
 	loggerPool.Store(name, Logger)
 }
-
-// func SetDefault(Logger *ZapX) {
-// 	DefaultLogger = Logger
-// }
 
 func SetDefaultWithOpt(options ...option) {
 	loggerPool.Delete("default")
