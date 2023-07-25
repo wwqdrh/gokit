@@ -1,6 +1,7 @@
 package ostool
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -13,8 +14,92 @@ import (
 	"syscall"
 
 	ps "github.com/mitchellh/go-ps"
+	"github.com/pkg/errors"
 	"github.com/wwqdrh/gokit/logger"
 )
+
+// RunCmdStd run a command, and redirect to stdout stderr
+func RunCmdStd(cmdStr string) error {
+	cmd := exec.Command("sh", "-c", cmdStr)
+
+	// Get the standard output and error pipes
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	// Start the command
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	// Create buffered readers for the pipes
+	stdoutReader := bufio.NewReader(stdout)
+	stderrReader := bufio.NewReader(stderr)
+
+	// Read from the pipes until they are closed or an error occurs
+	for {
+		// Read a line from the standard output
+		line, err := stdoutReader.ReadString('\n')
+		if err != nil {
+			break // Exit the loop if there is an error or EOF
+		}
+		// Print the line to the console
+		fmt.Print(line)
+	}
+
+	iserr := false
+	for {
+		// Read a line from the standard error
+		line, err := stderrReader.ReadString('\n')
+		if err != nil {
+			break // Exit the loop if there is an error or EOF
+		}
+		if line != "" {
+			iserr = true
+			fmt.Print(line)
+		}
+	}
+
+	if err := cmd.Wait(); err != nil {
+		return err
+	} else if iserr {
+		return errors.New("cmd error")
+	} else {
+		return nil
+	}
+}
+
+// WaitInput 等待用户输入
+func WaitInput(inputs []string, usage string) int {
+	// Create a buffered reader for the standard input
+	reader := bufio.NewReader(os.Stdin)
+
+	// Prompt the user to enter y or n
+	fmt.Print(fmt.Sprintf("%s %s\n", usage, strings.Join(inputs, " or ")))
+
+	// Read a line from the standard input
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println(err)
+		return -1
+	}
+	line = strings.TrimSpace(line)
+
+	// Check the first character of the line
+	for i, ch := range inputs {
+		if ch == line {
+			return i
+		}
+	}
+	fmt.Println("Invalid input, please enter " + strings.Join(inputs, " or "))
+	return WaitInput(inputs, usage)
+}
 
 // RunAndWait run cmd
 func RunAndWait(cmd *exec.Cmd) (string, string, error) {
