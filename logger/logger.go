@@ -17,6 +17,8 @@ import (
 var (
 	handler *http.Server
 
+	handlerPort = 5000
+
 	mux = http.NewServeMux()
 
 	handlerOnce = sync.Once{}
@@ -277,9 +279,13 @@ func (l *ZapX) starthandler(opt *LoggerOptions) {
 		}
 
 		// 启用内部handler
+		port := opt.HttpPort
+		if port == 0 {
+			port = handlerPort
+		}
 		if opt.InternalEngine {
 			handler = &http.Server{
-				Addr:         fmt.Sprintf(":%d", opt.HttpPort),
+				Addr:         fmt.Sprintf(":%d", port),
 				WriteTimeout: time.Second * 3,
 				Handler:      mux,
 			}
