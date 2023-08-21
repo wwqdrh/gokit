@@ -52,16 +52,32 @@ func (b *Builder) AddString(name, tag string) *Builder {
 	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(""), Tag: reflect.StructTag(tag)})
 }
 
+func (b *Builder) AddStringArray(name, tag string) *Builder {
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf([]string{""}), Tag: reflect.StructTag(tag)})
+}
+
 func (b *Builder) AddBool(name, tag string) *Builder {
 	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(true), Tag: reflect.StructTag(tag)})
+}
+
+func (b *Builder) AddBoolArray(name, tag string) *Builder {
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf([]bool{true}), Tag: reflect.StructTag(tag)})
 }
 
 func (b *Builder) AddInt64(name, tag string) *Builder {
 	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(int64(0)), Tag: reflect.StructTag(tag)})
 }
 
+func (b *Builder) AddInt64Array(name, tag string) *Builder {
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf([]int64{0}), Tag: reflect.StructTag(tag)})
+}
+
 func (b *Builder) AddFloat64(name, tag string) *Builder {
 	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(float64(1.2)), Tag: reflect.StructTag(tag)})
+}
+
+func (b *Builder) AddFloat64Array(name, tag string) *Builder {
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf([]float64{1.2}), Tag: reflect.StructTag(tag)})
 }
 
 func (b *Builder) AddStruct(name string, v interface{}, tag string, annomus bool) *Builder {
@@ -148,6 +164,10 @@ func (in *Instance) SetFloat64(name string, value float64) {
 
 func (i *Instance) Interface() interface{} {
 	return i.instance.Interface()
+}
+
+func (i *Instance) Type() reflect.Type {
+	return i.instance.Type()
 }
 
 func (i *Instance) Addr() interface{} {
