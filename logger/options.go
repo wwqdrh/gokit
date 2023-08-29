@@ -16,10 +16,9 @@ type LoggerOptions struct {
 	Console        bool // 如非必要不输出到控制台，例如开启fluentd就不需要输出，除非是fluentd失败
 	Switch         bool // 是否支持动态修改等级
 	SwitchTime     time.Duration
+	SwitchPort     int // 运行switch logger http接口的端口号
 	CtxKey         ctxKey
 	DefaultName    string                         // 指定了日志存储目录之后，如果在执行日志操作时不指定使用哪个label的话，默认会使用的名字
-	HttpMetrices   bool                           // 是否开启http接口，用于追踪当前日志
-	HttpPort       int                            // 运行http接口的端口号
 	HttpEngine     func(string, http.HandlerFunc) // 如何注册handler的
 	HttpPrefix     string
 	InternalEngine bool // 是否启用的内部engine
@@ -44,15 +43,14 @@ type option func(*LoggerOptions)
 
 func NewLoggerOption() *LoggerOptions {
 	return &LoggerOptions{
-		Level:        zapcore.InfoLevel,
-		DefaultName:  "default.txt",
-		HttpMetrices: false,
+		Level:       zapcore.InfoLevel,
+		DefaultName: "default.txt",
 		HttpEngine: func(url string, hf http.HandlerFunc) {
 			mux.HandleFunc(url, hf)
 		},
 		InternalEngine:    true,
 		CtxKey:            "logger",
-		HttpPort:          5000,
+		SwitchPort:        5000,
 		Color:             true,
 		Console:           true,
 		Switch:            false, // 默认不开启，因为会占用端口
@@ -82,12 +80,6 @@ func WithDefaultLogName(name string) option {
 	}
 }
 
-func WithHTTPMetrices(enable bool) option {
-	return func(lo *LoggerOptions) {
-		lo.HttpMetrices = enable
-	}
-}
-
 func WithEngine(engine func(string, http.HandlerFunc)) option {
 	return func(lo *LoggerOptions) {
 		lo.HttpEngine = engine
@@ -95,9 +87,9 @@ func WithEngine(engine func(string, http.HandlerFunc)) option {
 	}
 }
 
-func WithPort(port int) option {
+func WithSwitchPort(port int) option {
 	return func(lo *LoggerOptions) {
-		lo.HttpPort = port
+		lo.SwitchPort = port
 	}
 }
 
@@ -110,12 +102,6 @@ func WithCtxKey(key ctxKey) option {
 func WithLevel(level zapcore.Level) option {
 	return func(lo *LoggerOptions) {
 		lo.Level = level
-	}
-}
-
-func WithHTTPPrefix(prefix string) option {
-	return func(lo *LoggerOptions) {
-		lo.HttpPrefix = prefix
 	}
 }
 

@@ -97,7 +97,6 @@ func NewBasicLogger(options ...option) *ZapX {
 		WithEncoderTime("at"),
 		WithEncoderTimeWithLayout("2006-01-02 15:04:05.000"),
 		WithEncoderOut("plain"),
-		WithHTTPMetrices(false),
 		WithSwitch(false, 1*time.Second),
 	}, options...)
 
@@ -148,11 +147,13 @@ func Get(name string) *ZapX {
 // 输出到日志中的不加颜色
 // 控制台中的根据color属性判断
 // l := NewLogger(
-// 	WithLevel(zapcore.DebugLevel),
-// 	WithLogPath("./logs/info.log"),
-// 	WithName("info"),
-// 	WithCaller(false),
-// 	WithSwitchTime(2*time.Second),
+//
+//	WithLevel(zapcore.DebugLevel),
+//	WithLogPath("./logs/info.log"),
+//	WithName("info"),
+//	WithCaller(false),
+//	WithSwitchTime(2*time.Second),
+//
 // )
 func NewLogger(options ...option) *ZapX {
 	opt := NewLoggerOption()
@@ -264,22 +265,17 @@ func (l *ZapX) WithLabel(label string) *ZapX {
 }
 
 func (l *ZapX) starthandler(opt *LoggerOptions) {
-	if !opt.HttpMetrices && !opt.Switch {
+	if !opt.Switch {
 		return
 	}
 
 	handlerOnce.Do(func() {
-		// 创建服务器
-		if opt.HttpMetrices {
-			EnableMetrices(opt.HttpPrefix, opt.HttpEngine)
-		}
-
 		if opt.Switch {
-			EnableSwitch(opt.HttpEngine)
+			enableSwitch(opt.HttpEngine)
 		}
 
 		// 启用内部handler
-		port := opt.HttpPort
+		port := opt.SwitchPort
 		if port == 0 {
 			port = handlerPort
 		}
@@ -311,18 +307,6 @@ func (l *ZapX) AddCtx(ctx context.Context, field ...zap.Field) (context.Context,
 	log := &ZapX{Logger: l.With(field...), opts: l.opts}
 	ctx = context.WithValue(ctx, l.opts.CtxKey, log)
 	return ctx, log
-}
-
-func (l *ZapX) GetLogListUrl() string {
-	return l.opts.HttpPrefix + UrlLogList
-}
-
-func (l *ZapX) GetLogLabelListUrl() string {
-	return l.opts.HttpPrefix + UrlLogLabelList
-}
-
-func (l *ZapX) GetLogTailurl() string {
-	return l.opts.HttpPrefix + UrlLogTail
 }
 
 func (l *ZapX) WithContext(ctx context.Context) *ZapX {

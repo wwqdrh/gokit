@@ -10,14 +10,15 @@ import (
 )
 
 var (
-	keyFn = sync.Map{} // string, func(zapcore.Level)
+	keyFn     = sync.Map{} // string, func(zapcore.Level)
+	switchAPI = "/log/setlevel"
 )
 
 type switchFn func(zapcore.Level)
 
-func EnableSwitch(register func(string, http.HandlerFunc)) {
+func enableSwitch(register func(string, http.HandlerFunc)) {
 	// 设置路由规则
-	register("/setlevel", func(w http.ResponseWriter, r *http.Request) {
+	register(switchAPI, func(w http.ResponseWriter, r *http.Request) {
 		key, level := r.URL.Query().Get("key"), r.URL.Query().Get("level")
 
 		fnI, ok := keyFn.Load(key)
@@ -42,7 +43,7 @@ func EnableSwitch(register func(string, http.HandlerFunc)) {
 	})
 }
 
-// 保证日志刷入到磁盘不会丢失
+// Sync 保证日志刷入到磁盘不会丢失
 func Sync() {
 	loggerPool.Range(func(key, value interface{}) bool {
 		l, ok := value.(*ZapX)
