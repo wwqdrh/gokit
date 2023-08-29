@@ -1,4 +1,4 @@
-package datax
+package cache
 
 import (
 	"encoding/gob"

@@ -9,7 +9,6 @@ package datax
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -44,7 +43,6 @@ func (b *Builder) Build() *Struct {
 	for i := 0; i < stu.NumField(); i++ {
 		index[stu.Field(i).Name] = i
 	}
-	fmt.Println(stu.Name())
 	return &Struct{stu, index}
 }
 
