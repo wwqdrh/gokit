@@ -2,6 +2,8 @@ package storage
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/shirou/gopsutil/v3/disk"
 )
@@ -24,4 +26,15 @@ func GetBasicStorage() map[string][2]uint64 {
 		result[partition.Device] = [2]uint64{usage.Total, usage.Free}
 	}
 	return result
+}
+
+func GetPaskDisk(path string) (uint64, error) {
+	var size uint64 = 0
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			size += uint64(info.Size())
+		}
+		return err
+	})
+	return size, err
 }

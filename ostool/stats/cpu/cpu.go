@@ -5,6 +5,7 @@ import (
 	"time"
 
 	psutilcpu "github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 var (
@@ -26,7 +27,7 @@ func GetInfo() Info {
 	}
 }
 
-func GetCpuPercent() float64 {
+func GetBasicCpuPercent() float64 {
 	// use cpu.Percent to get the total cpu usage percentage
 	// pass 0 as the first argument to get a single value
 	// pass false as the second argument to get the total percentage
@@ -39,7 +40,17 @@ func GetCpuPercent() float64 {
 	return usage[0]
 }
 
-//GetClockTicks get the OS's ticks per second
+func GetTaskCPU(pid int32) (float64, error) {
+	p, err := process.NewProcess(pid)
+	if err != nil {
+		return 0, err
+	}
+
+	percent, err := p.CPUPercent()
+	return percent, err
+}
+
+// GetClockTicks get the OS's ticks per second
 func GetClockTicks() int {
 	// TODO figure out a better alternative for platforms where we're missing cgo
 	//
