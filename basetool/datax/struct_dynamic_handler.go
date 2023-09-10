@@ -186,7 +186,7 @@ func (r IDynamcHandler) BuildModel(request []IDynamcHandler) (*Instance, string)
 		validatestr := item.Validate
 		nextvalidate := map[string]interface{}{}
 		if err := json.Unmarshal([]byte(item.Validate), &nextvalidate); err != nil {
-			logger.DefaultLogger.Warn(err.Error())
+			logger.DefaultLogger.Debug(err.Error())
 		}
 
 		switch item.Mode {
