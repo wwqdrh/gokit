@@ -274,11 +274,11 @@ func (r IDynamcHandler) BuildModel(request []IDynamcHandler) (*Instance, string)
 	return mod.Build().New(), contentType
 }
 
-func (r IDynamcHandler) BindValue(request []IDynamcHandler, getVal func(name string) (interface{}, error)) (*Instance, error) {
+func (r IDynamcHandler) BindValue(request []IDynamcHandler, getVal func(item IDynamcHandler) (interface{}, error)) (*Instance, error) {
 	res, _ := r.BuildModel(request)
 	var errs error
 	for _, item := range request {
-		val, err := getVal(item.Name)
+		val, err := getVal(item)
 		if err != nil {
 			if errs == nil {
 				errs = err
