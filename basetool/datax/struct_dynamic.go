@@ -9,6 +9,7 @@ package datax
 
 import (
 	"errors"
+	"mime/multipart"
 	"reflect"
 	"strings"
 
@@ -120,6 +121,16 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 			res[field] = val.Int()
 		case "float":
 			res[field] = val.Float()
+		case "[]int":
+			res[field] = val.Interface().([]int)
+		case "[]bool":
+			res[field] = val.Interface().([]bool)
+		case "[]float":
+			res[field] = val.Interface().([]float64)
+		case "*multipart.FileHeader":
+			res[field] = val.Interface().(*multipart.FileHeader)
+		case "[]*multipart.FileHeader":
+			res[field] = val.Interface().([]*multipart.FileHeader)
 		default:
 			logger.DefaultLogger.Warn("dont support this type")
 		}
@@ -157,6 +168,13 @@ func (in *Instance) SetInt64(name string, value int64) {
 func (in *Instance) SetFloat64(name string, value float64) {
 	if i, ok := in.index[strings.ToUpper(name)]; ok {
 		in.instance.Field(i).SetFloat(value)
+	}
+}
+
+// 添加一个方法，不知道什么类型就直接用这个
+func (in *Instance) SetValue(name string, value interface{}) {
+	if i, ok := in.index[strings.ToUpper(name)]; ok {
+		in.instance.Field(i).Set(reflect.ValueOf(value))
 	}
 }
 
