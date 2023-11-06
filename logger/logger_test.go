@@ -2,6 +2,7 @@ package logger
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -122,4 +123,27 @@ func TestLoggerWithTraceID(t *testing.T) {
 	l.Info("TestGetLogger", zap.Any("t", "t"))
 	FA(ctx)
 	FB(ctx)
+}
+
+func TestTraceID(t *testing.T) {
+	wait := &sync.WaitGroup{}
+	wait.Add(2)
+
+	go func() {
+		defer func() {
+			wait.Done()
+		}()
+		DefaultLogger.Trace().Info("fun", zap.String("name", "func1"))
+		DefaultLogger.Trace().Info("arg", zap.String("name", "arg1"))
+	}()
+
+	go func() {
+		defer func() {
+			wait.Done()
+		}()
+		DefaultLogger.Trace().Info("fun", zap.String("name", "func1"))
+		DefaultLogger.Trace().Info("arg", zap.String("name", "arg1"))
+	}()
+
+	wait.Wait()
 }

@@ -6,9 +6,13 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -25,6 +29,7 @@ var (
 )
 
 var (
+	gidMap          = map[int64]context.Context{} // goroutin child-zapx
 	loggerPool      = sync.Map{}
 	atomicLevelPool = sync.Map{} // string=>*switchContext
 	loggerLevel     = zap.InfoLevel
@@ -47,6 +52,17 @@ type switchContext struct {
 var (
 	DefaultLogger *ZapX
 )
+
+func getGoroutineID() int64 {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+	id, err := strconv.ParseInt(idField, 10, 64)
+	if err != nil {
+		panic(fmt.Sprintf("cannot get goroutine id: %v", err))
+	}
+	return id
+}
 
 type ZapX struct {
 	*zap.Logger
@@ -175,14 +191,11 @@ func NewLogger(options ...option) *ZapX {
 
 	var (
 		basicEncoder zapcore.Encoder
-		colorEncoder zapcore.Encoder
 	)
 	if opt.EncoderOut == "json" {
 		basicEncoder = zapcore.NewJSONEncoder(config)
-		colorEncoder = NewColorJsonEncoder(config)
 	} else {
 		basicEncoder = zapcore.NewConsoleEncoder(config)
-		colorEncoder = NewColorConsoleEncoder(config)
 	}
 
 	// 构造zap
@@ -204,13 +217,8 @@ func NewLogger(options ...option) *ZapX {
 		priority = getPriority(opt.Level)
 	}
 
-	// 控制台输出是否添加颜色
 	if opt.Console {
-		if opt.Color {
-			coreArr = append(coreArr, zapcore.NewCore(colorEncoder, zapcore.AddSync(os.Stdout), priority))
-		} else {
-			coreArr = append(coreArr, zapcore.NewCore(basicEncoder, zapcore.AddSync(os.Stdout), priority))
-		}
+		coreArr = append(coreArr, zapcore.NewCore(basicEncoder, zapcore.AddSync(os.Stdout), priority))
 	}
 	// 是否保存到文件中
 	if opt.LogPath != "" {
@@ -293,6 +301,19 @@ func (l *ZapX) starthandler(opt *LoggerOptions) {
 			}()
 		}
 	})
+}
+
+// Trace 根据当前gorotuine id分辨ctx
+func (l *ZapX) Trace(fields ...zap.Field) *ZapX {
+	curID := getGoroutineID()
+	if v, exist := gidMap[curID]; exist {
+		return l.GetCtx(v)
+	} else {
+		fields = append(fields, zap.String("traceid", uuid.New().String()))
+		ctx, l := l.AddCtx(context.TODO(), fields...)
+		gidMap[curID] = ctx
+		return l
+	}
 }
 
 func (l *ZapX) GetCtx(ctx context.Context) *ZapX {

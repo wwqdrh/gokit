@@ -12,7 +12,6 @@ type ctxKey string
 type LoggerOptions struct {
 	// 基础配置
 	Name           string
-	Color          bool
 	Console        bool // 如非必要不输出到控制台，例如开启fluentd就不需要输出，除非是fluentd失败
 	Switch         bool // 是否支持动态修改等级
 	SwitchTime     time.Duration
@@ -51,7 +50,6 @@ func NewLoggerOption() *LoggerOptions {
 		InternalEngine:    true,
 		CtxKey:            "logger",
 		SwitchPort:        5000,
-		Color:             true,
 		Console:           true,
 		Switch:            false, // 默认不开启，因为会占用端口
 		SwitchTime:        5 * time.Minute,
@@ -115,12 +113,6 @@ func WithSwitch(isSwitch bool, switchTime time.Duration) option {
 func WithLogPath(logPath string) option {
 	return func(lo *LoggerOptions) {
 		lo.LogPath = logPath
-	}
-}
-
-func WithColor(color bool) option {
-	return func(lo *LoggerOptions) {
-		lo.Color = color
 	}
 }
 
