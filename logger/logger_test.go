@@ -126,6 +126,8 @@ func TestLoggerWithTraceID(t *testing.T) {
 }
 
 func TestTraceID(t *testing.T) {
+	SetDefaultWithOpt(WithCaller(true))
+
 	wait := &sync.WaitGroup{}
 	wait.Add(2)
 
@@ -133,16 +135,17 @@ func TestTraceID(t *testing.T) {
 		defer func() {
 			wait.Done()
 		}()
-		DefaultLogger.Trace().Info("fun", zap.String("name", "func1"))
-		DefaultLogger.Trace().Info("arg", zap.String("name", "arg1"))
+		Get("default").Trace().Info("fun", zap.String("name", "func1"))
+		Get("default").Trace().Info("arg", zap.String("name", "arg1"))
+		Get("default").Trace().Info("now start server")
 	}()
 
 	go func() {
 		defer func() {
 			wait.Done()
 		}()
-		DefaultLogger.Trace().Info("fun", zap.String("name", "func1"))
-		DefaultLogger.Trace().Info("arg", zap.String("name", "arg1"))
+		Get("default").Trace().Info("fun", zap.String("name", "func1"))
+		Get("default").Trace().Info("arg", zap.String("name", "arg1"))
 	}()
 
 	wait.Wait()
