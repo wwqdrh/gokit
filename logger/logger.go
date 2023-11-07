@@ -29,7 +29,7 @@ var (
 )
 
 var (
-	gidMap          = sync.Map{} // map[int64]context.Context{} // goroutin child-zapx
+	gidMap          = sync.Map{} // map[string]context.Context{} // name-gid child-zapx
 	loggerPool      = sync.Map{}
 	atomicLevelPool = sync.Map{} // string=>*switchContext
 	loggerLevel     = zap.InfoLevel
@@ -238,13 +238,9 @@ func NewLogger(options ...option) *ZapX {
 	if opt.Caller {
 		zapOpts = append(zapOpts, zap.AddCaller())
 	}
-	l := zap.New(zapcore.NewTee(coreArr...), zapOpts...)
-	if opt.Name != "" {
-		loggerPool.Store(opt.Name, l)
-	}
 
 	logx := &ZapX{
-		Logger: l,
+		Logger: zap.New(zapcore.NewTee(coreArr...), zapOpts...),
 		opts:   opt,
 		rawOpt: options,
 	}
@@ -305,7 +301,7 @@ func (l *ZapX) starthandler(opt *LoggerOptions) {
 
 // Trace 根据当前gorotuine id分辨ctx
 func (l *ZapX) Trace(fields ...zap.Field) *ZapX {
-	curID := getGoroutineID()
+	curID := fmt.Sprintf("%s-%d", l.opts.Name, getGoroutineID())
 	if v, exist := gidMap.Load(curID); exist {
 		return l.GetCtx(v.(context.Context))
 	} else {

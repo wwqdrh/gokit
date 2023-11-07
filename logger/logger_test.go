@@ -126,7 +126,8 @@ func TestLoggerWithTraceID(t *testing.T) {
 }
 
 func TestTraceID(t *testing.T) {
-	SetDefaultWithOpt(WithCaller(true))
+	SetDefaultWithOpt(WithCaller(true), WithEncoderOut("plain"))
+	NewMiniLogger(WithName("mini"), WithEncoderOut("json"), WithCaller(true))
 
 	wait := &sync.WaitGroup{}
 	wait.Add(2)
@@ -138,6 +139,9 @@ func TestTraceID(t *testing.T) {
 		Get("default").Trace().Info("fun", zap.String("name", "func1"))
 		Get("default").Trace().Info("arg", zap.String("name", "arg1"))
 		Get("default").Trace().Info("now start server")
+		Get("mini").Trace().Info("minifun", zap.String("name", "func1"))
+		Get("mini").Trace().Info("miniarg", zap.String("name", "arg1"))
+		Get("mini").Trace().Info("mini now start server")
 	}()
 
 	go func() {
@@ -146,6 +150,8 @@ func TestTraceID(t *testing.T) {
 		}()
 		Get("default").Trace().Info("fun", zap.String("name", "func1"))
 		Get("default").Trace().Info("arg", zap.String("name", "arg1"))
+		Get("mini").Trace().Info("minifun", zap.String("name", "func1"))
+		Get("mini").Trace().Info("miniarg", zap.String("name", "arg1"))
 	}()
 
 	wait.Wait()
