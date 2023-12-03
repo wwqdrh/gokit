@@ -12,8 +12,9 @@ var Opt = struct {
 }{}
 
 var SubOpt = struct {
-	Echo bool   `name:"echo" alias:"e"`
-	Data string `name:"data" desc:"docker swarm集群中的shadow服务地址"`
+	Echo bool     `name:"echo" alias:"e"`
+	Data string   `name:"data" desc:"docker swarm集群中的shadow服务地址"`
+	Args []string `name:"args"`
 }{
 	Echo: false,
 	Data: "hh213",
@@ -39,7 +40,7 @@ func main() {
 			Short: "sub",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				if SubOpt.Echo {
-					fmt.Println(Opt.Name, SubOpt.Data)
+					fmt.Println(Opt.Name, SubOpt.Data, SubOpt.Args)
 				}
 				return nil
 			},

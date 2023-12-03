@@ -70,7 +70,41 @@ func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config
 			} else {
 				flags.BoolVar(fieldPtr, name, defaultValue, c.Description)
 			}
+		case []int:
+			defaultValue := c.DefaultValue.([]int)
+			if field.Len() != 0 {
+				defaultValue = field.Interface().([]int)
+			}
+			fieldPtr := (*[]int)(unsafe.Pointer(field.UnsafeAddr()))
+			if c.Alias != "" {
+				flags.IntSliceVarP(fieldPtr, name, c.Alias, defaultValue, c.Description)
+			} else {
+				flags.IntSliceVar(fieldPtr, name, defaultValue, c.Description)
+			}
+		case []bool:
+			defaultValue := c.DefaultValue.([]bool)
+			if field.Len() != 0 {
+				defaultValue = field.Interface().([]bool)
+			}
+			fieldPtr := (*[]bool)(unsafe.Pointer(field.UnsafeAddr()))
+			if c.Alias != "" {
+				flags.BoolSliceVarP(fieldPtr, name, c.Alias, defaultValue, c.Description)
+			} else {
+				flags.BoolSliceVar(fieldPtr, name, defaultValue, c.Description)
+			}
+		case []string:
+			defaultValue := c.DefaultValue.([]string)
+			if field.Len() != 0 {
+				defaultValue = field.Interface().([]string)
+			}
+			fieldPtr := (*[]string)(unsafe.Pointer(field.UnsafeAddr()))
+			if c.Alias != "" {
+				flags.StringSliceVarP(fieldPtr, name, c.Alias, defaultValue, c.Description)
+			} else {
+				flags.StringSliceVar(fieldPtr, name, defaultValue, c.Description)
+			}
 		}
+
 		if c.Hidden {
 			_ = flags.MarkHidden(name)
 		}
