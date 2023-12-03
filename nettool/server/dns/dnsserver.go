@@ -24,7 +24,7 @@ func SetupLocalDns(remoteDnsPort, localDnsPort int, dnsOrder []string, ttl int64
 		// domain-name -> ip
 		extraDomains := map[string]string{}
 		logger.DefaultLogger.Infox("Setup local DNS with upstream %v", nil, upstreamDnsAddresses)
-		HandleExtraDomainMapping(extraDomains, localDnsPort)
+		HandleExtraDomainMapping(extraDomains, localDnsPort, "")
 		res <- SetupDnsServer(&DnsServer{upstreamDnsAddresses, extraDomains}, localDnsPort, "udp")
 	}()
 	select {

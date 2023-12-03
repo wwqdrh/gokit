@@ -1,6 +1,9 @@
 package common
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 // GetAvailablePort 获取可用端口
 func GetAvailablePort() (int, error) {
@@ -18,4 +21,14 @@ func GetAvailablePort() (int, error) {
 		_ = l.Close()
 	}(l)
 	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
+// CheckPortAvailable 检查端口是否可用
+func CheckPortAvailable(port int) bool {
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return false
+	}
+	ln.Close()
+	return true
 }

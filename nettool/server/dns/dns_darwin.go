@@ -1,8 +1,8 @@
 package dns
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -30,7 +30,7 @@ func HandleExtraDomainMapping(extraDomains map[string]string, localDnsPort int, 
 
 // RestoreNameServer remove the nameservers added by ktctl
 func RestoreNameServer() {
-	rd, _ := ioutil.ReadDir(resolverDir)
+	rd, _ := os.ReadDir(resolverDir)
 	for _, f := range rd {
 		if !f.IsDir() && strings.HasPrefix(f.Name(), ktResolverPrefix) {
 			if err := os.Remove(fmt.Sprintf("%s/%s", resolverDir, f.Name())); err != nil {
@@ -40,6 +40,10 @@ func RestoreNameServer() {
 	}
 }
 
+func SetNameServer(dnsServer string, dnsMode string) error {
+	return errors.New("not support darwin")
+}
+
 func createResolverFile(postfix, domain, dnsIp, dnsPort string) {
 	resolverFile := fmt.Sprintf("%s/%s%s", resolverDir, ktResolverPrefix, postfix)
 	if _, err := os.Stat(resolverFile); err == nil {
@@ -47,14 +51,14 @@ func createResolverFile(postfix, domain, dnsIp, dnsPort string) {
 	}
 	resolverContent := fmt.Sprintf("%s\ndomain %s\nnameserver %s\nport %s\n",
 		resolverComment, domain, dnsIp, dnsPort)
-	if err := ioutil.WriteFile(resolverFile, []byte(resolverContent), 0644); err != nil {
+	if err := os.WriteFile(resolverFile, []byte(resolverContent), 0644); err != nil {
 		logger.DefaultLogger.Warnx("%s: Failed to create resolver file of %s", nil, err.Error(), domain)
 	}
 }
 
 func getAllDomainSuffixes(extraDomains map[string]string) []string {
 	var suffixes []string
-	for domain, _ := range extraDomains {
+	for domain := range extraDomains {
 		i := strings.LastIndex(domain, ".")
 		if i < 0 {
 			continue
