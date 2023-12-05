@@ -1,4 +1,4 @@
-package engine
+package ws
 
 import (
 	"bytes"
