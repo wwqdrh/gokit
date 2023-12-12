@@ -44,6 +44,8 @@ var upgrader = websocket.Upgrader{
 type Conn interface {
 	Read(context.Context) ([]byte, error)
 	Write(ctx context.Context, msg []byte) error
+	ReadMsg() ([]byte, error)
+	WriteMsg(msg []byte) error
 	LocalAddr() net.Addr
 	ID() int32
 	Close()
@@ -142,7 +144,7 @@ func (c *Client) Read(ctx context.Context) ([]byte, error) {
 	}
 }
 
-func (c *Client) ReadMsg(ctx context.Context) ([]byte, error) {
+func (c *Client) ReadMsg() ([]byte, error) {
 	msg := <-c.recv
 	return msg, nil
 }
@@ -162,7 +164,7 @@ func (c *Client) Write(ctx context.Context, msg []byte) error {
 	}
 }
 
-func (c *Client) WriteMsg(ctx context.Context, msg []byte) error {
+func (c *Client) WriteMsg(msg []byte) error {
 	c.Lock()
 	defer c.Unlock()
 
