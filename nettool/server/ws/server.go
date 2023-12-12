@@ -13,23 +13,26 @@ import (
 
 type WSServer struct {
 	sync.Mutex
-	addr    string
-	wg      sync.WaitGroup
-	conns   map[*websocket.Conn]struct{}
-	connid  int32
-	ln      net.Listener
-	onNew   func(Conn)
-	onClose func(Conn)
+	addr      string
+	wg        sync.WaitGroup
+	conns     map[*websocket.Conn]struct{}
+	connid    int32
+	ln        net.Listener
+	onInvoker func(Conn) IConnInvoker
 
 	close func()
 }
 
-func NewWSServer(addr string, onNew func(conn Conn), onClose func(conn Conn)) *WSServer {
+type IConnInvoker interface {
+	OnNew()
+	OnClose()
+}
+
+func NewWSServer(addr string, invoker func(conn Conn) IConnInvoker) *WSServer {
 	return &WSServer{
-		addr:    addr,
-		onNew:   onNew,
-		onClose: onClose,
-		conns:   make(map[*websocket.Conn]struct{}),
+		addr:      addr,
+		onInvoker: invoker,
+		conns:     make(map[*websocket.Conn]struct{}),
 	}
 }
 
@@ -88,15 +91,19 @@ func (p *WSServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	wsc.WithConnID(p.NewConnID())
 
-	if p.onNew != nil {
-		p.onNew(wsc)
+	var invoker IConnInvoker
+	if p.onInvoker != nil {
+		invoker = p.onInvoker(wsc)
+	}
+	if invoker != nil {
+		invoker.OnNew()
 	}
 	wsc.Close()
 	p.Lock()
 	delete(p.conns, conn)
 	p.Unlock()
-	if p.onClose != nil {
-		p.onClose(wsc)
+	if invoker != nil {
+		invoker.OnClose()
 	}
 }
 
