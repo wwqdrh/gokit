@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/wwqdrh/gokit/logger"
-	"github.com/wwqdrh/gokit/ostool"
 )
 
 // listen address of systemd-resolved
@@ -45,7 +45,7 @@ func GetLocalDomains() string {
 // GetNameServer get primary dns server
 func GetNameServer() string {
 	ns := fetchNameServerInConf(ResolvConf)
-	if ostool.IsLinux() && ns == resolvedAddr {
+	if runtime.GOOS == "linux" && ns == resolvedAddr {
 		logger.DefaultLogger.Debug("Using systemd-resolved")
 		return fetchNameServerInConf(resolvedConf)
 	}

@@ -3,14 +3,13 @@ package dns
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"testing"
-
-	"github.com/wwqdrh/gokit/ostool"
 )
 
 func TestSetupLocalDns(t *testing.T) {
 	dnsPort := AlternativeDnsPort
-	if ostool.IsWindows() {
+	if runtime.GOOS == "windows" {
 		dnsPort = StandardDnsPort
 	}
 

@@ -1,11 +1,11 @@
 package iptables
 
 import (
+	"bytes"
 	"fmt"
 	"os/exec"
 
 	"github.com/wwqdrh/gokit/logger"
-	"github.com/wwqdrh/gokit/ostool"
 )
 
 type iptablesRule struct{}
@@ -14,11 +14,21 @@ func NewIptablesRule() iptablesRule {
 	return iptablesRule{}
 }
 
+func RunAndWait(cmd *exec.Cmd) (string, string, error) {
+	var outBuf bytes.Buffer
+	var errBuf bytes.Buffer
+	cmd.Stdout = &outBuf
+	cmd.Stderr = &errBuf
+	logger.DefaultLogger.Debugx("Task %s with args %+v", nil, cmd.Path, cmd.Args)
+	err := cmd.Run()
+	return outBuf.String(), errBuf.String(), err
+}
+
 // --dest: 127.0.0.1/32
 // --dport: 53
 // --to-ports: 10053
 func (r iptablesRule) NatAddPortRedirect(dest, port, tport string) error {
-	if _, _, err := ostool.RunAndWait(exec.Command("iptables",
+	if _, _, err := RunAndWait(exec.Command("iptables",
 		"--table",
 		"nat",
 		"--insert",
@@ -44,7 +54,7 @@ func (r iptablesRule) NatAddPortRedirect(dest, port, tport string) error {
 func (r iptablesRule) NatDelPortRedirect(dest, port, tport string) {
 	// iptables -D INPUT 3
 	for {
-		_, _, err := ostool.RunAndWait(exec.Command("iptables",
+		_, _, err := RunAndWait(exec.Command("iptables",
 			"--table",
 			"nat",
 			"--delete",
@@ -68,7 +78,7 @@ func (r iptablesRule) NatDelPortRedirect(dest, port, tport string) {
 
 func (r iptablesRule) ListRuleNumber(table string) error {
 	// iptables -L -n --line-number
-	if res, _, err := ostool.RunAndWait(exec.Command("iptables",
+	if res, _, err := RunAndWait(exec.Command("iptables",
 		"--table",
 		table,
 		"-L", "-n", "--line-number",
