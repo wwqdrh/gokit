@@ -322,7 +322,7 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 
 		switch item.Type {
 		case "string":
-			res.SetString(item.Name, fmt.Sprint(val))
+			res.SetValue(item.Name, fmt.Sprint(val))
 		case "[]string":
 			if cv, ok := val.([]string); ok {
 				res.SetValue(item.Name, cv)
@@ -333,7 +333,7 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			if cv, err := strconv.ParseInt(fmt.Sprint(val), 10, 64); err != nil {
 				logger.DefaultLogger.Warn("not a int64")
 			} else {
-				res.SetInt64(item.Name, cv)
+				res.SetValue(item.Name, cv)
 			}
 		case "[]int":
 			if cv, ok := val.([]int64); ok {
@@ -352,9 +352,9 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 		case "float":
 			if cv, ok := val.(float64); !ok {
 				logger.DefaultLogger.Warn("not a float")
-				res.SetFloat64(item.Name, 0)
+				res.SetValue(item.Name, float64(0))
 			} else {
-				res.SetFloat64(item.Name, cv)
+				res.SetValue(item.Name, cv)
 			}
 		case "[]float":
 			if cv, ok := val.([]float64); ok {
@@ -365,9 +365,9 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 		case "bool":
 			if cv, ok := val.(bool); !ok {
 				logger.DefaultLogger.Warn("not a bool")
-				res.SetBool(item.Name, false)
+				res.SetValue(item.Name, false)
 			} else {
-				res.SetBool(item.Name, cv)
+				res.SetValue(item.Name, cv)
 			}
 		case "[]bool":
 			if cv, ok := val.([]bool); ok {

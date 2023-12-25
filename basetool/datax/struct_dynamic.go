@@ -107,7 +107,7 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 
 	for field, fieldType := range dataType {
 		if strings.Contains(field, ".") {
-			result, err := in.GetObjectValue(field)
+			result, err := in.GetValue(field)
 			if err != nil {
 				logger.DefaultLogger.Warn(err.Error())
 				continue
@@ -141,7 +141,7 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 		case "[]*multipart.FileHeader":
 			res[field] = val.Interface().([]*multipart.FileHeader)
 		case "object":
-			result, err := in.GetObjectValue(field)
+			result, err := in.GetValue(field)
 			if err != nil {
 				logger.DefaultLogger.Warn(err.Error())
 				continue
@@ -163,39 +163,19 @@ func (in Instance) Field(name string) (reflect.Value, error) {
 	}
 }
 
-func (in *Instance) SetString(name, value string) {
-	if i, ok := in.index[strings.ToUpper(name)]; ok {
-		in.instance.Field(i).SetString(value)
-	}
-}
-
-func (in *Instance) SetBool(name string, value bool) {
-	if i, ok := in.index[strings.ToUpper(name)]; ok {
-		in.instance.Field(i).SetBool(value)
-	}
-}
-
-func (in *Instance) SetInt64(name string, value int64) {
-	if i, ok := in.index[strings.ToUpper(name)]; ok {
-		in.instance.Field(i).SetInt(value)
-	}
-}
-
-func (in *Instance) SetFloat64(name string, value float64) {
-	if i, ok := in.index[strings.ToUpper(name)]; ok {
-		in.instance.Field(i).SetFloat(value)
-	}
-}
-
 // 添加一个方法，不知道什么类型就直接用这个
 func (in *Instance) SetValue(name string, value interface{}) {
-	if i, ok := in.index[strings.ToUpper(name)]; ok {
-		in.instance.Field(i).Set(reflect.ValueOf(value))
+	if strings.Contains(name, ".") {
+		in.setObjectValue(name, value)
+	} else {
+		if i, ok := in.index[strings.ToUpper(name)]; ok {
+			in.instance.Field(i).Set(reflect.ValueOf(value))
+		}
 	}
 }
 
 // payload.id
-func (in *Instance) SetObjectValue(name string, value interface{}) error {
+func (in *Instance) setObjectValue(name string, value interface{}) error {
 	parts := strings.Split(strings.ToUpper(name), ".")
 	var rootField reflect.Value
 	if i, ok := in.index[strings.ToUpper(parts[0])]; ok {
@@ -221,7 +201,7 @@ func (in *Instance) setFieldValue(field reflect.Value, parts []string, value int
 	in.setFieldValue(nextField, parts[1:], value)
 }
 
-func (in *Instance) GetObjectValue(name string) (interface{}, error) {
+func (in *Instance) GetValue(name string) (interface{}, error) {
 	parts := strings.Split(strings.ToUpper(name), ".")
 	var rootField reflect.Value
 	if i, ok := in.index[strings.ToUpper(parts[0])]; ok {
