@@ -106,6 +106,15 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 	res := map[string]interface{}{}
 
 	for field, fieldType := range dataType {
+		if strings.Contains(field, ".") {
+			result, err := in.GetObjectValue(field)
+			if err != nil {
+				logger.DefaultLogger.Warn(err.Error())
+				continue
+			}
+			res[field] = result
+		}
+
 		val, err := in.Field(field)
 		if err != nil {
 			logger.DefaultLogger.Warn(err.Error())
@@ -131,6 +140,13 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 			res[field] = val.Interface().(*multipart.FileHeader)
 		case "[]*multipart.FileHeader":
 			res[field] = val.Interface().([]*multipart.FileHeader)
+		case "object":
+			result, err := in.GetObjectValue(field)
+			if err != nil {
+				logger.DefaultLogger.Warn(err.Error())
+				continue
+			}
+			res[field] = result
 		default:
 			logger.DefaultLogger.Warn("dont support this type")
 		}
@@ -176,6 +192,87 @@ func (in *Instance) SetValue(name string, value interface{}) {
 	if i, ok := in.index[strings.ToUpper(name)]; ok {
 		in.instance.Field(i).Set(reflect.ValueOf(value))
 	}
+}
+
+// payload.id
+func (in *Instance) SetObjectValue(name string, value interface{}) error {
+	parts := strings.Split(strings.ToUpper(name), ".")
+	var rootField reflect.Value
+	if i, ok := in.index[strings.ToUpper(parts[0])]; ok {
+		rootField = in.instance.Field(i)
+	} else {
+		return errors.New("not found this object")
+	}
+	in.setFieldValue(rootField, parts[1:], value)
+	return nil
+}
+
+func (in *Instance) setFieldValue(field reflect.Value, parts []string, value interface{}) {
+	if len(parts) == 0 {
+		field.Set(reflect.ValueOf(value))
+		return
+	}
+
+	nextField := field.FieldByName(parts[0])
+	if !nextField.IsValid() {
+		return
+	}
+
+	in.setFieldValue(nextField, parts[1:], value)
+}
+
+func (in *Instance) GetObjectValue(name string) (interface{}, error) {
+	parts := strings.Split(strings.ToUpper(name), ".")
+	var rootField reflect.Value
+	if i, ok := in.index[strings.ToUpper(parts[0])]; ok {
+		rootField = in.instance.Field(i)
+	} else {
+		return nil, errors.New("not found this object")
+	}
+
+	curfield, err := in.getFieldValue(rootField, parts[1:])
+	if err != nil {
+		return nil, err
+	}
+	// 如果curfield是一个struct的话，递归将该struct转为map[string]interface{}
+	if curfield.Kind() == reflect.Struct {
+		return in.structToMap(curfield), nil
+	}
+
+	return curfield.Interface(), nil
+}
+
+func (in *Instance) getFieldValue(field reflect.Value, parts []string) (reflect.Value, error) {
+	if !field.IsValid() {
+		return reflect.Value{}, errors.New("invalid field")
+	}
+
+	if len(parts) == 0 {
+		return field, nil
+	}
+
+	nextField := field.FieldByName(parts[0])
+	if !nextField.IsValid() {
+		return reflect.Value{}, errors.New("invalid field")
+	}
+
+	return in.getFieldValue(nextField, parts[1:])
+}
+
+func (in *Instance) structToMap(structField reflect.Value) map[string]interface{} {
+	dataMap := make(map[string]interface{})
+	for i := 0; i < structField.NumField(); i++ {
+		key := structField.Type().Field(i).Name
+		val := structField.Field(i).Interface()
+
+		if structField.Field(i).Kind() == reflect.Struct {
+			val = in.structToMap(structField.Field(i))
+		}
+
+		dataMap[key] = val
+	}
+
+	return dataMap
 }
 
 func (i *Instance) Interface() interface{} {

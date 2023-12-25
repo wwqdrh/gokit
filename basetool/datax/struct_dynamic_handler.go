@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"mime/multipart"
 	"reflect"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/wwqdrh/gokit/logger"
@@ -86,13 +88,14 @@ type IDynamcHandler struct {
 	Type     string
 	Mode     ReqType
 	Validate string
+	visited  bool
 
-	children []IDynamcHandler // only for json mode
+	children []*IDynamcHandler // only for json mode
 }
 
 // FromJsonStr from json str to
-func (r IDynamcHandler) FromJsonData(data map[string]interface{}, validate map[string]interface{}) []IDynamcHandler {
-	res := []IDynamcHandler{}
+func (r IDynamcHandler) FromJsonData(data map[string]interface{}, validate map[string]interface{}) []*IDynamcHandler {
+	res := []*IDynamcHandler{}
 	for key, val := range data {
 		curvalidatestr := ""
 		nextvalidate := map[string]interface{}{}
@@ -112,35 +115,35 @@ func (r IDynamcHandler) FromJsonData(data map[string]interface{}, validate map[s
 
 		switch v := val.(type) {
 		case string:
-			res = append(res, IDynamcHandler{
+			res = append(res, &IDynamcHandler{
 				Name:     key,
 				Type:     "string",
 				Mode:     JSON,
 				Validate: curvalidatestr,
 			})
 		case int64, int32, int, uint64, uint32, uint:
-			res = append(res, IDynamcHandler{
+			res = append(res, &IDynamcHandler{
 				Name:     key,
 				Type:     "int",
 				Mode:     JSON,
 				Validate: curvalidatestr,
 			})
 		case float64, float32:
-			res = append(res, IDynamcHandler{
+			res = append(res, &IDynamcHandler{
 				Name:     key,
 				Type:     "float",
 				Mode:     JSON,
 				Validate: curvalidatestr,
 			})
 		case bool:
-			res = append(res, IDynamcHandler{
+			res = append(res, &IDynamcHandler{
 				Name:     key,
 				Type:     "bool",
 				Mode:     JSON,
 				Validate: curvalidatestr,
 			})
 		case map[string]interface{}:
-			res = append(res, IDynamcHandler{
+			res = append(res, &IDynamcHandler{
 				Name:     key,
 				Type:     "-",
 				Mode:     JSON,
@@ -151,7 +154,7 @@ func (r IDynamcHandler) FromJsonData(data map[string]interface{}, validate map[s
 			if len(v) == 0 {
 				continue
 			}
-			res = append(res, IDynamcHandler{
+			res = append(res, &IDynamcHandler{
 				Name:     key,
 				Type:     "array",
 				Mode:     JSON,
@@ -163,7 +166,7 @@ func (r IDynamcHandler) FromJsonData(data map[string]interface{}, validate map[s
 				continue
 			}
 			if vMap, ok := v[0].(map[string]interface{}); ok {
-				res = append(res, IDynamcHandler{
+				res = append(res, &IDynamcHandler{
 					Name:     key,
 					Type:     "array",
 					Mode:     JSON,
@@ -176,11 +179,20 @@ func (r IDynamcHandler) FromJsonData(data map[string]interface{}, validate map[s
 	return res
 }
 
-func (r IDynamcHandler) BuildModel(request []IDynamcHandler) (*Instance, string) {
+func (r IDynamcHandler) BuildModel(request []*IDynamcHandler) (*Instance, string) {
+	sort.Slice(request, func(i, j int) bool {
+		return request[i].Name < request[j].Name
+	})
+
 	var contentType string
 
 	mod := NewBuilder()
 	for _, item := range request {
+		if item.visited {
+			continue
+		}
+		item.visited = true
+
 		var tag string
 
 		validatestr := item.Validate
@@ -240,6 +252,9 @@ func (r IDynamcHandler) BuildModel(request []IDynamcHandler) (*Instance, string)
 		case "file":
 			f := &multipart.FileHeader{}
 			mod = mod.AddStruct(item.Name, f, tag, false)
+		case "object":
+			m, _ := r.BuildModelByPrefix(item.Name, request)
+			mod = mod.AddStruct(item.Name, reflect.New(m.Type()).Elem().Interface(), tag, false)
 		default:
 			// maybe a json mod
 			if len(item.children) > 0 {
@@ -274,7 +289,24 @@ func (r IDynamcHandler) BuildModel(request []IDynamcHandler) (*Instance, string)
 	return mod.Build().New(), contentType
 }
 
-func (r IDynamcHandler) BindValue(request []IDynamcHandler, getVal func(item IDynamcHandler) (interface{}, error)) (*Instance, error) {
+func (r IDynamcHandler) BuildModelByPrefix(prefix string, request []*IDynamcHandler) (*Instance, string) {
+	handles := []*IDynamcHandler{}
+	for _, item := range request {
+		if item.visited {
+			continue
+		}
+		if strings.HasPrefix(item.Name, prefix) {
+			curname := strings.TrimLeft(item.Name, prefix)
+			if strings.HasPrefix(curname, ".") {
+				item.Name = curname[1:]
+				handles = append(handles, item)
+			}
+		}
+	}
+	return r.BuildModel(handles)
+}
+
+func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *IDynamcHandler) (interface{}, error)) (*Instance, error) {
 	res, _ := r.BuildModel(request)
 	var errs error
 	for _, item := range request {
