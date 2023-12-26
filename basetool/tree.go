@@ -1,4 +1,4 @@
-package datax
+package basetool
 
 type INode interface {
 	// GetId获取id

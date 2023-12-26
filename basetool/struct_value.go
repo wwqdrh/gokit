@@ -1,4 +1,4 @@
-package datax
+package basetool
 
 import (
 	"errors"
@@ -217,7 +217,7 @@ func Kinds(obj interface{}) (map[string]string, error) {
 	for i := 0; i < objValue.NumField(); i++ {
 		fieldType := objType.Field(i)
 		fieldValue := objValue.Field(i)
-		
+
 		if fieldValue.CanInterface() {
 			kindMap[fieldType.Name] = fieldValue.Kind().String()
 		}

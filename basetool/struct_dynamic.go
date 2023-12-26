@@ -1,4 +1,4 @@
-package datax
+package basetool
 
 ////////
 // 当前的反射
@@ -11,6 +11,7 @@ import (
 	"errors"
 	"mime/multipart"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/wwqdrh/gokit/logger"
@@ -131,7 +132,7 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 		case "float":
 			res[field] = val.Float()
 		case "[]int":
-			res[field] = val.Interface().([]int)
+			res[field] = val.Interface().([]int64)
 		case "[]bool":
 			res[field] = val.Interface().([]bool)
 		case "[]float":
@@ -140,7 +141,7 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 			res[field] = val.Interface().(*multipart.FileHeader)
 		case "[]*multipart.FileHeader":
 			res[field] = val.Interface().([]*multipart.FileHeader)
-		case "object":
+		case "object", "[]object":
 			result, err := in.GetValue(field)
 			if err != nil {
 				logger.DefaultLogger.Warn(err.Error())
@@ -193,12 +194,48 @@ func (in *Instance) setFieldValue(field reflect.Value, parts []string, value int
 		return
 	}
 
-	nextField := field.FieldByName(parts[0])
-	if !nextField.IsValid() {
-		return
+	curname := parts[0]
+	if field.Kind() == reflect.Array || field.Kind() == reflect.Slice {
+		curidx, err := strconv.ParseInt(curname[1:len(curname)-1], 10, 64)
+		if err != nil {
+			return
+		}
+		curlen := curidx + 1
+		if field.Len() < int(curlen) {
+			// 新增
+			for i := field.Len(); i < int(curlen)-1; i++ {
+				field.Set(reflect.Append(field, reflect.Zero(field.Type().Elem())))
+			}
+			curitem := reflect.Zero(field.Type().Elem())
+			if len(parts) == 1 {
+				if value == nil {
+					// use default value
+					field.Set(reflect.Append(field, curitem))
+				} else {
+					field.Set(reflect.Append(field, reflect.ValueOf(value)))
+				}
+			} else {
+				field.Set(reflect.Append(field, curitem))
+				in.setFieldValue(curitem, parts[1:], value)
+			}
+		} else {
+			// 修改
+			idx := int(curidx)
+			if idx < field.Len() {
+				curitem := field.Index(idx)
+				if len(parts) == 1 {
+					curitem.Set(reflect.ValueOf(value))
+				} else {
+					in.setFieldValue(curitem, parts[1:], value)
+				}
+			}
+		}
+	} else {
+		nextField := field.FieldByName(curname)
+		if nextField.IsValid() {
+			in.setFieldValue(nextField, parts[1:], value)
+		}
 	}
-
-	in.setFieldValue(nextField, parts[1:], value)
 }
 
 func (in *Instance) GetValue(name string) (interface{}, error) {
@@ -217,6 +254,14 @@ func (in *Instance) GetValue(name string) (interface{}, error) {
 	// 如果curfield是一个struct的话，递归将该struct转为map[string]interface{}
 	if curfield.Kind() == reflect.Struct {
 		return in.structToMap(curfield), nil
+	} else if curfield.Kind() == reflect.Array || curfield.Kind() == reflect.Slice {
+		if curfield.Len() > 0 && curfield.Index(0).Kind() == reflect.Struct {
+			res := []map[string]interface{}{}
+			for i := 0; i < curfield.Len(); i++ {
+				res = append(res, in.structToMap(curfield.Index(i)))
+			}
+			return res, nil
+		}
 	}
 
 	return curfield.Interface(), nil

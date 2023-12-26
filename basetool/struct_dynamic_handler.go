@@ -1,5 +1,5 @@
 // for http
-package datax
+package basetool
 
 import (
 	"encoding/json"
@@ -179,7 +179,7 @@ func (r IDynamcHandler) FromJsonData(data map[string]interface{}, validate map[s
 	return res
 }
 
-func (r IDynamcHandler) BuildModel(request []*IDynamcHandler) (*Instance, string) {
+func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*Instance, string) {
 	sort.Slice(request, func(i, j int) bool {
 		return request[i].Name < request[j].Name
 	})
@@ -195,6 +195,14 @@ func (r IDynamcHandler) BuildModel(request []*IDynamcHandler) (*Instance, string
 
 		var tag string
 
+		itemName := strings.TrimLeft(item.Name, prefix)
+		if itemName == "" {
+			continue
+		}
+		if itemName[0] == '.' {
+			itemName = itemName[1:]
+		}
+
 		validatestr := item.Validate
 		nextvalidate := map[string]interface{}{}
 		if err := json.Unmarshal([]byte(item.Validate), &nextvalidate); err != nil {
@@ -203,25 +211,25 @@ func (r IDynamcHandler) BuildModel(request []*IDynamcHandler) (*Instance, string
 
 		switch item.Mode {
 		case Query:
-			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "query", item.Name, item.Validate)
+			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "query", itemName, item.Validate)
 		case Form:
-			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", item.Name, item.Validate)
+			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", itemName, item.Validate)
 			if contentType == "" {
 				contentType = MIMEMultipartPOSTForm
 			}
 		case Header:
-			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "header", item.Name, item.Validate)
+			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "header", itemName, item.Validate)
 		case Uri:
-			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "uri", item.Name, item.Validate)
+			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "uri", itemName, item.Validate)
 		case JSON:
 			if len(nextvalidate) == 0 {
 				// plain text
-				tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", item.Name, validatestr)
+				tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", itemName, validatestr)
 			} else {
 				// json text
 				if v := nextvalidate["_"]; v != nil {
 					if v, ok := v.(string); ok {
-						tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", item.Name, v)
+						tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", itemName, v)
 					}
 				}
 			}
@@ -229,57 +237,60 @@ func (r IDynamcHandler) BuildModel(request []*IDynamcHandler) (*Instance, string
 				contentType = MIMEJSON
 			}
 		default:
-			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", item.Name, item.Validate)
+			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", itemName, item.Validate)
 		}
 
 		switch item.Type {
 		case "string":
-			mod = mod.AddString(item.Name, tag)
+			mod = mod.AddString(itemName, tag)
 		case "[]string":
-			mod = mod.AddStringArray(item.Name, tag)
+			mod = mod.AddStringArray(itemName, tag)
 		case "int":
-			mod = mod.AddInt64(item.Name, tag)
+			mod = mod.AddInt64(itemName, tag)
 		case "[]int":
-			mod = mod.AddInt64Array(item.Name, tag)
+			mod = mod.AddInt64Array(itemName, tag)
 		case "float":
-			mod = mod.AddFloat64(item.Name, tag)
+			mod = mod.AddFloat64(itemName, tag)
 		case "[]float":
-			mod = mod.AddFloat64Array(item.Name, tag)
+			mod = mod.AddFloat64Array(itemName, tag)
 		case "bool":
-			mod = mod.AddBool(item.Name, tag)
+			mod = mod.AddBool(itemName, tag)
 		case "[]bool":
-			mod = mod.AddBoolArray(item.Name, tag)
+			mod = mod.AddBoolArray(itemName, tag)
 		case "file":
 			f := &multipart.FileHeader{}
-			mod = mod.AddStruct(item.Name, f, tag, false)
+			mod = mod.AddStruct(itemName, f, tag, false)
 		case "object":
 			m, _ := r.BuildModelByPrefix(item.Name, request)
-			mod = mod.AddStruct(item.Name, reflect.New(m.Type()).Elem().Interface(), tag, false)
+			mod = mod.AddStruct(itemName, reflect.New(m.Type()).Elem().Interface(), tag, false)
+		case "[]object":
+			m, _ := r.BuildModelByPrefix(item.Name, request)
+			mod = mod.AddStruct(itemName, reflect.Zero(reflect.SliceOf(m.Type())).Interface(), tag, false)
 		default:
 			// maybe a json mod
 			if len(item.children) > 0 {
 				if item.Type == "array" {
-					m, _ := r.BuildModel(item.children)
-					mod = mod.AddStruct(item.Name, reflect.Zero(reflect.SliceOf(m.Type())).Interface(), tag, false)
+					m, _ := r.BuildModel("", item.children)
+					mod = mod.AddStruct(itemName, reflect.Zero(reflect.SliceOf(m.Type())).Interface(), tag, false)
 				} else {
-					m, _ := r.BuildModel(item.children)
-					mod = mod.AddStruct(item.Name, reflect.New(m.Type()).Elem().Interface(), tag, false)
+					m, _ := r.BuildModel("", item.children)
+					mod = mod.AddStruct(itemName, reflect.New(m.Type()).Elem().Interface(), tag, false)
 				}
 				continue
 			}
 
 			var jsondata map[string]interface{}
 			if err := json.Unmarshal([]byte(item.Type), &jsondata); err == nil {
-				m, _ := r.BuildModel(r.FromJsonData(jsondata, nextvalidate))
-				mod = mod.AddStruct(item.Name, reflect.New(m.Type()).Elem().Interface(), tag, false)
+				m, _ := r.BuildModel("", r.FromJsonData(jsondata, nextvalidate))
+				mod = mod.AddStruct(itemName, reflect.New(m.Type()).Elem().Interface(), tag, false)
 				continue
 			}
 
 			// todo the []map[string]interface{} type
 			var jsondataArr []map[string]interface{}
 			if err := json.Unmarshal([]byte(item.Type), &jsondataArr); err == nil && len(jsondataArr) == 1 {
-				m, _ := r.BuildModel(r.FromJsonData(jsondataArr[0], nextvalidate))
-				mod = mod.AddStruct(item.Name, reflect.Zero(reflect.SliceOf(m.Type())).Interface(), tag, false)
+				m, _ := r.BuildModel("", r.FromJsonData(jsondataArr[0], nextvalidate))
+				mod = mod.AddStruct(itemName, reflect.Zero(reflect.SliceOf(m.Type())).Interface(), tag, false)
 				continue
 			}
 
@@ -298,16 +309,15 @@ func (r IDynamcHandler) BuildModelByPrefix(prefix string, request []*IDynamcHand
 		if strings.HasPrefix(item.Name, prefix) {
 			curname := strings.TrimLeft(item.Name, prefix)
 			if strings.HasPrefix(curname, ".") {
-				item.Name = curname[1:]
 				handles = append(handles, item)
 			}
 		}
 	}
-	return r.BuildModel(handles)
+	return r.BuildModel(prefix, handles)
 }
 
 func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *IDynamcHandler) (interface{}, error)) (*Instance, error) {
-	res, _ := r.BuildModel(request)
+	res, _ := r.BuildModel("", request)
 	var errs error
 	for _, item := range request {
 		val, err := getVal(item)
