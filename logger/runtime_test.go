@@ -24,7 +24,7 @@ func TestSwitchWatch(t *testing.T) {
 	l.Error("this is error")
 	fmt.Println("修改等级====")
 
-	req := httptest.NewRequest("GET", "/setlevel?"+url.Values{"key": []string{"info"}, "level": []string{"info"}}.Encode(), nil)
+	req := httptest.NewRequest("GET", switchAPI+"?"+url.Values{"key": []string{"info"}, "level": []string{"info"}}.Encode(), nil)
 	res := httptest.NewRecorder()
 	require.NotNil(t, handler)
 	handler.Handler.ServeHTTP(res, req)

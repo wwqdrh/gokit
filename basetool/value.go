@@ -21,6 +21,10 @@ func IsBlank(value reflect.Value) bool {
 		return value.Float() == 0
 	case reflect.Interface, reflect.Ptr:
 		return value.IsNil()
+	case reflect.Array, reflect.Slice, reflect.Map:
+		return value.Len() == 0
+	case reflect.Struct:
+		return false
 	}
 	return reflect.DeepEqual(value.Interface(), reflect.Zero(value.Type()).Interface())
 }
