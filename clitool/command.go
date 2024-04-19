@@ -1,6 +1,14 @@
 package clitool
 
 import (
+	"bufio"
+	"fmt"
+	"os"
+	"reflect"
+	"strconv"
+	"strings"
+	"unsafe"
+
 	"github.com/spf13/cobra"
 	"github.com/wwqdrh/gokit/logger"
 )
@@ -16,8 +24,16 @@ type Command struct {
 func (c *Command) Builder() {
 	if !c.inited {
 		if len(c.Options) == 0 && len(c.Persistent) == 0 {
-			if err := c.OptionByValues(); err != nil {
+			if options, err := c.optionByValues(c.Values); err != nil {
 				logger.DefaultLogger.Error(err.Error())
+			} else {
+				for _, item := range options {
+					if item.Persistent {
+						c.Persistent = append(c.Persistent, *item)
+					} else {
+						c.Options = append(c.Options, *item)
+					}
+				}
 			}
 		}
 
@@ -27,15 +43,22 @@ func (c *Command) Builder() {
 		if len(c.Persistent) > 0 {
 			SetOptions(c.Cmd, c.Cmd.PersistentFlags(), c.Values, c.Persistent)
 		}
+		fn := c.Cmd.PreRun
+		c.Cmd.PreRun = func(cmd *cobra.Command, args []string) {
+			c.echo()
+			if fn != nil {
+				fn(cmd, args)
+			}
+		}
 
 		c.inited = true
 	}
 }
 
-func (c *Command) OptionByValues() error {
+func (c *Command) optionByValues(values interface{}) (map[string]*OptionConfig, error) {
 	options := map[string]*OptionConfig{}
 
-	if targets, err := GetTagValue(c.Values, "name"); err == nil {
+	if targets, err := GetTagValue(values, "name"); err == nil {
 		for key, val := range targets {
 			if _, ok := options[key]; !ok {
 				defaultvalue, err := GetValue(c.Values, key)
@@ -51,7 +74,7 @@ func (c *Command) OptionByValues() error {
 		}
 	}
 
-	if targets, err := GetTagValue(c.Values, "alias"); err == nil {
+	if targets, err := GetTagValue(values, "alias"); err == nil {
 		for key, val := range targets {
 			if _, ok := options[key]; !ok {
 				options[key] = &OptionConfig{
@@ -62,7 +85,7 @@ func (c *Command) OptionByValues() error {
 		}
 	}
 
-	if targets, err := GetTagValue(c.Values, "desc"); err == nil {
+	if targets, err := GetTagValue(values, "desc"); err == nil {
 		for key, val := range targets {
 			if _, ok := options[key]; !ok {
 				options[key] = &OptionConfig{
@@ -73,7 +96,7 @@ func (c *Command) OptionByValues() error {
 		}
 	}
 
-	if targets, err := GetTagValue(c.Values, "hidden"); err == nil {
+	if targets, err := GetTagValue(values, "hidden"); err == nil {
 		for key, val := range targets {
 			if _, ok := options[key]; !ok {
 				options[key] = &OptionConfig{
@@ -85,7 +108,7 @@ func (c *Command) OptionByValues() error {
 		}
 	}
 
-	if targets, err := GetTagValue(c.Values, "required"); err == nil {
+	if targets, err := GetTagValue(values, "required"); err == nil {
 		for key, val := range targets {
 			if _, ok := options[key]; !ok {
 				options[key] = &OptionConfig{
@@ -97,7 +120,7 @@ func (c *Command) OptionByValues() error {
 		}
 	}
 
-	if targets, err := GetTagValue(c.Values, "persistent"); err == nil {
+	if targets, err := GetTagValue(values, "persistent"); err == nil {
 		for key, val := range targets {
 			if _, ok := options[key]; !ok {
 				options[key] = &OptionConfig{
@@ -109,14 +132,19 @@ func (c *Command) OptionByValues() error {
 		}
 	}
 
-	for _, item := range options {
-		if item.Persistent {
-			c.Persistent = append(c.Persistent, *item)
-		} else {
-			c.Options = append(c.Options, *item)
+	if targets, err := GetTagValue(values, "echo"); err == nil {
+		for key, val := range targets {
+			if _, ok := options[key]; !ok {
+				options[key] = &OptionConfig{
+					Target: key,
+				}
+			}
+
+			options[key].ShouldEcho = val == "true"
 		}
 	}
-	return nil
+
+	return options, nil
 }
 
 func (c *Command) Add(cmd *Command) {
@@ -125,6 +153,94 @@ func (c *Command) Add(cmd *Command) {
 	c.Cmd.AddCommand(cmd.Cmd)
 
 	cmd.Builder()
+}
+
+func (cm *Command) echo() error {
+	options, err := cm.optionByValues(cm.Values)
+	if err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for _, c := range options {
+		if !c.ShouldEcho {
+			continue
+		}
+		name := UnCapitalize(c.Target)
+		if c.Name != "" {
+			name = c.Name
+		}
+		field := reflect.ValueOf(cm.Values).Elem().FieldByName(c.Target)
+
+		switch c.DefaultValue.(type) {
+		case string:
+			fieldPtr := (*string)(unsafe.Pointer(field.UnsafeAddr()))
+
+			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
+			scanner.Scan()
+			*fieldPtr = strings.TrimSpace(scanner.Text())
+		case int:
+			fieldPtr := (*int)(unsafe.Pointer(field.UnsafeAddr()))
+			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
+			scanner.Scan()
+			{
+				data := strings.TrimSpace(scanner.Text())
+				if v64, err := strconv.ParseInt(data, 10, 64); err != nil {
+					fmt.Println(err.Error())
+				} else {
+					*fieldPtr = int(v64)
+				}
+			}
+		case bool:
+			fieldPtr := (*bool)(unsafe.Pointer(field.UnsafeAddr()))
+			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
+			scanner.Scan()
+			*fieldPtr = strings.TrimSpace(scanner.Text()) == "true"
+		case []string:
+			fieldPtr := (*[]string)(unsafe.Pointer(field.UnsafeAddr()))
+			fmt.Printf("%s - %s default is: (%s)\n", c.Name, c.Description, strings.Trim(fmt.Sprint(c.DefaultValue), "[]"))
+			scanner.Scan()
+			{
+				data := strings.TrimSpace(scanner.Text())
+				*fieldPtr = strings.Split(data, ",")
+			}
+		case []int:
+			fieldPtr := (*[]int)(unsafe.Pointer(field.UnsafeAddr()))
+			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
+			scanner.Scan()
+			{
+				data := strings.TrimSpace(scanner.Text())
+				v := []int{}
+				ok := true
+				for _, item := range strings.Split(data, ",") {
+					if v64, err := strconv.ParseInt(item, 10, 64); err != nil {
+						fmt.Println(err.Error())
+						ok = false
+						break
+					} else {
+						v = append(v, int(v64))
+					}
+				}
+				if ok {
+					*fieldPtr = v
+				}
+			}
+
+		case []bool:
+			fieldPtr := (*[]bool)(unsafe.Pointer(field.UnsafeAddr()))
+			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
+			scanner.Scan()
+			{
+				data := strings.TrimSpace(scanner.Text())
+				v := []bool{}
+				for _, item := range strings.Split(data, ",") {
+					v = append(v, item == "true")
+				}
+				*fieldPtr = v
+			}
+		}
+	}
+	return nil
 }
 
 func (c *Command) Run() {

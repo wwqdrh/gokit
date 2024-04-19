@@ -22,6 +22,7 @@ type OptionConfig struct {
 	Hidden       bool
 	Required     bool
 	Persistent   bool
+	ShouldEcho   bool
 }
 
 func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config []OptionConfig) {
@@ -29,6 +30,7 @@ func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config
 	cmd.Flags().SortFlags = false
 	cmd.InheritedFlags().SortFlags = false
 	flags.SortFlags = false
+
 	for _, c := range config {
 		name := UnCapitalize(c.Target)
 		if c.Name != "" {
@@ -38,11 +40,11 @@ func SetOptions(cmd *cobra.Command, flags *flag.FlagSet, optionStore any, config
 
 		switch c.DefaultValue.(type) {
 		case string:
-			fieldPtr := (*string)(unsafe.Pointer(field.UnsafeAddr()))
 			defaultValue := c.DefaultValue.(string)
 			if field.String() != "" {
 				defaultValue = field.String()
 			}
+			fieldPtr := (*string)(unsafe.Pointer(field.UnsafeAddr()))
 			if c.Alias != "" {
 				flags.StringVarP(fieldPtr, name, c.Alias, defaultValue, c.Description)
 			} else {

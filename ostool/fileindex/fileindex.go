@@ -5,16 +5,21 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/wwqdrh/gokit/logger"
 )
 
 type FileInfoTree struct {
-	rootpath string               // 扫描的根目录
-	interval int                  // 定时扫描路径
-	onUpdate OnFileInfoUpdate     // 文件更新回调函数
-	tree     map[string]FileIndex // 前缀树
-	mu       sync.RWMutex         // 读写互斥锁
-	stopCh   chan struct{}        // 停止通道
-	wg       sync.WaitGroup       // 等待组
+	rootpath     string               // 扫描的根目录
+	interval     int                  // 定时扫描路径
+	ignores      map[string]struct{}  // 需要忽略的文件夹或者文件名
+	onUpdate     OnFileInfoUpdate     // 文件更新回调函数
+	tree         map[string]FileIndex // 前缀树
+	mu           sync.RWMutex         // 读写互斥锁
+	stopCh       chan struct{}        // 停止通道
+	wg           sync.WaitGroup       // 等待组
+	running      bool
+	runningMutex sync.RWMutex
 }
 
 type FileIndex struct {
@@ -25,9 +30,14 @@ type FileIndex struct {
 type OnFileInfoUpdate func(FileIndex)
 
 // 根据传递的p文件路径，递归遍历整个文件并构建一颗以文件路径为key的前缀树
-func NewFileInfoTree(p string, interval int) *FileInfoTree {
+func NewFileInfoTree(p string, interval int, ignores []string) *FileInfoTree {
+	ignoreMap := map[string]struct{}{}
+	for _, item := range ignores {
+		ignoreMap[item] = struct{}{}
+	}
 	return &FileInfoTree{
 		rootpath: p,
+		ignores:  ignoreMap,
 		interval: interval,
 		tree:     make(map[string]FileIndex),
 		stopCh:   make(chan struct{}),
@@ -47,20 +57,28 @@ func (i *FileInfoTree) Start() {
 
 func (i *FileInfoTree) updateLoop() {
 	defer i.wg.Done()
-	ticker := time.NewTicker(time.Duration(i.interval) * time.Second)
+	ticker := time.NewTicker(time.Duration(i.interval) * time.Millisecond)
 	defer ticker.Stop()
-
+	i.walk(i.rootpath)
 	for {
 		select {
 		case <-ticker.C:
-			i.walk(i.rootpath)
+			if !i.running {
+				i.running = true
+				i.walk(i.rootpath)
+				i.running = false
+			}
 		case <-i.stopCh:
+			logger.DefaultLogger.Debug("quit fileinfo tree loop")
 			return
 		}
 	}
 }
 
 func (i *FileInfoTree) walk(path string) {
+	if _, ok := i.ignores[filepath.Base(path)]; ok {
+		return
+	}
 	fi, err := os.Stat(path)
 	if err != nil {
 		return
@@ -68,6 +86,7 @@ func (i *FileInfoTree) walk(path string) {
 
 	if !fi.IsDir() {
 		lastUpdate := i.tree[path].UpdateTime
+		lastSize := i.tree[path].Size
 
 		idx := FileIndex{
 			UpdateTime: fi.ModTime().UnixNano(),
@@ -76,7 +95,10 @@ func (i *FileInfoTree) walk(path string) {
 		i.mu.Lock()
 		i.tree[path] = idx
 		i.mu.Unlock()
-		if i.onUpdate != nil && lastUpdate != idx.UpdateTime {
+		// if update, maybe zero or actual data size
+		if i.onUpdate != nil &&
+			lastUpdate != idx.UpdateTime &&
+			lastSize != idx.Size {
 			i.onUpdate(idx)
 		}
 		return
