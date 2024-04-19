@@ -22,7 +22,7 @@ type Command struct {
 }
 
 func (c *Command) Builder() {
-	if c == nil {
+	if c.Cmd == nil {
 		return
 	}
 
