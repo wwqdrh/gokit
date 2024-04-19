@@ -22,8 +22,8 @@ type Command struct {
 }
 
 func (c *Command) Builder() {
-	if c == nil || c.Cmd == nil {
-		return
+	if c.Cmd == nil {
+		c.Cmd = &cobra.Command{}
 	}
 
 	if !c.inited {
