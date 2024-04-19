@@ -22,6 +22,10 @@ type Command struct {
 }
 
 func (c *Command) Builder() {
+	if c == nil {
+		return
+	}
+
 	if !c.inited {
 		if len(c.Options) == 0 && len(c.Persistent) == 0 {
 			if options, err := c.optionByValues(c.Values); err != nil {
