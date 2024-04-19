@@ -184,13 +184,14 @@ func (cm *Command) echo() error {
 
 			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
 			scanner.Scan()
-			*fieldPtr = strings.TrimSpace(scanner.Text())
+			if data := strings.TrimSpace(scanner.Text()); data != "" {
+				*fieldPtr = data
+			}
 		case int:
 			fieldPtr := (*int)(unsafe.Pointer(field.UnsafeAddr()))
 			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
 			scanner.Scan()
-			{
-				data := strings.TrimSpace(scanner.Text())
+			if data := strings.TrimSpace(scanner.Text()); data != "" {
 				if v64, err := strconv.ParseInt(data, 10, 64); err != nil {
 					fmt.Println(err.Error())
 				} else {
@@ -201,21 +202,21 @@ func (cm *Command) echo() error {
 			fieldPtr := (*bool)(unsafe.Pointer(field.UnsafeAddr()))
 			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
 			scanner.Scan()
-			*fieldPtr = strings.TrimSpace(scanner.Text()) == "true"
+			if data := strings.TrimSpace(scanner.Text()); data != "" {
+				*fieldPtr = data == "true"
+			}
 		case []string:
 			fieldPtr := (*[]string)(unsafe.Pointer(field.UnsafeAddr()))
 			fmt.Printf("%s - %s default is: (%s)\n", c.Name, c.Description, strings.Trim(fmt.Sprint(c.DefaultValue), "[]"))
 			scanner.Scan()
-			{
-				data := strings.TrimSpace(scanner.Text())
+			if data := strings.TrimSpace(scanner.Text()); data != "" {
 				*fieldPtr = strings.Split(data, ",")
 			}
 		case []int:
 			fieldPtr := (*[]int)(unsafe.Pointer(field.UnsafeAddr()))
 			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
 			scanner.Scan()
-			{
-				data := strings.TrimSpace(scanner.Text())
+			if data := strings.TrimSpace(scanner.Text()); data != "" {
 				v := []int{}
 				ok := true
 				for _, item := range strings.Split(data, ",") {
@@ -231,13 +232,11 @@ func (cm *Command) echo() error {
 					*fieldPtr = v
 				}
 			}
-
 		case []bool:
 			fieldPtr := (*[]bool)(unsafe.Pointer(field.UnsafeAddr()))
 			fmt.Printf("%s - %s default is: (%v)\n", name, c.Description, c.DefaultValue)
 			scanner.Scan()
-			{
-				data := strings.TrimSpace(scanner.Text())
+			if data := strings.TrimSpace(scanner.Text()); data != "" {
 				v := []bool{}
 				for _, item := range strings.Split(data, ",") {
 					v = append(v, item == "true")
