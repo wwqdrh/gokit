@@ -10,19 +10,20 @@ import (
 )
 
 type FileInfoTree struct {
-	rootpath     string               // 扫描的根目录
-	interval     int                  // 定时扫描路径
-	ignores      map[string]struct{}  // 需要忽略的文件夹或者文件名
-	onUpdate     OnFileInfoUpdate     // 文件更新回调函数
-	tree         map[string]FileIndex // 前缀树
-	mu           sync.RWMutex         // 读写互斥锁
-	stopCh       chan struct{}        // 停止通道
-	wg           sync.WaitGroup       // 等待组
-	running      bool
-	runningMutex sync.RWMutex
+	rootpath string               // 扫描的根目录
+	interval int                  // 定时扫描路径
+	ignores  map[string]struct{}  // 需要忽略的文件夹或者文件名
+	onUpdate OnFileInfoUpdate     // 文件更新回调函数
+	tree     map[string]FileIndex // 前缀树
+	mu       sync.RWMutex         // 读写互斥锁
+	stopCh   chan struct{}        // 停止通道
+	wg       sync.WaitGroup       // 等待组
+	running  bool
 }
 
 type FileIndex struct {
+	BaseName   string
+	Path       string
 	UpdateTime int64 // 最后更新时间
 	Size       int64 // 文件大小
 }
@@ -89,6 +90,8 @@ func (i *FileInfoTree) walk(path string) {
 		lastSize := i.tree[path].Size
 
 		idx := FileIndex{
+			Path:       path,
+			BaseName:   fi.Name(),
 			UpdateTime: fi.ModTime().UnixNano(),
 			Size:       fi.Size(),
 		}

@@ -33,7 +33,7 @@ func TestFileInfoTree(t *testing.T) {
 		// 设置回调函数
 		var updateCalled int64 = 0
 		tree.SetOnFileInfoUpdate(func(fi FileIndex) {
-			fmt.Println(fi.UpdateTime, fi.Size)
+			fmt.Println(fi.UpdateTime, fi.Size, fi.BaseName, fi.Path)
 			atomic.AddInt64(&updateCalled, 1)
 		})
 
