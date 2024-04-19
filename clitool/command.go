@@ -43,11 +43,13 @@ func (c *Command) Builder() {
 		if len(c.Persistent) > 0 {
 			SetOptions(c.Cmd, c.Cmd.PersistentFlags(), c.Values, c.Persistent)
 		}
-		fn := c.Cmd.PreRun
-		c.Cmd.PreRun = func(cmd *cobra.Command, args []string) {
-			c.echo()
-			if fn != nil {
-				fn(cmd, args)
+		if c.Cmd {
+			fn := c.Cmd.PreRun
+			c.Cmd.PreRun = func(cmd *cobra.Command, args []string) {
+				c.echo()
+				if fn != nil {
+					fn(cmd, args)
+				}
 			}
 		}
 
