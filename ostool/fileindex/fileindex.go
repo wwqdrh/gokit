@@ -10,15 +10,16 @@ import (
 )
 
 type FileInfoTree struct {
-	rootpath string               // 扫描的根目录
-	interval int                  // 定时扫描路径
-	ignores  map[string]struct{}  // 需要忽略的文件夹或者文件名
-	onUpdate OnFileInfoUpdate     // 文件更新回调函数
-	tree     map[string]FileIndex // 前缀树
-	mu       sync.RWMutex         // 读写互斥锁
-	stopCh   chan struct{}        // 停止通道
-	wg       sync.WaitGroup       // 等待组
-	running  bool
+	rootpath         string               // 扫描的根目录
+	interval         int                  // 定时扫描路径
+	ignores          map[string]struct{}  // 需要忽略的文件夹或者文件名
+	onUpdate         OnFileInfoUpdate     // 文件更新回调函数
+	tree             map[string]FileIndex // 前缀树
+	mu               sync.RWMutex         // 读写互斥锁
+	stopCh           chan struct{}        // 停止通道
+	wg               sync.WaitGroup       // 等待组
+	running          bool
+	defaultTimelines map[string]int64
 }
 
 type FileIndex struct {
@@ -49,6 +50,10 @@ func (i *FileInfoTree) SetOnFileInfoUpdate(fn OnFileInfoUpdate) {
 	i.onUpdate = fn
 }
 
+func (i *FileInfoTree) SetDefaultTimeLines(timeslines map[string]int64) {
+	i.defaultTimelines = timeslines
+}
+
 // 定时扫描p路径下的文件，新增或者删除树节点，或者通过GetFileUpdateTime获取文件的上次更新时间并更新到树的节点中
 // 扫描到文件的时候，执行i.onUpdate函数
 func (i *FileInfoTree) Start() {
@@ -76,6 +81,15 @@ func (i *FileInfoTree) updateLoop() {
 	}
 }
 
+// 如果为true，则需要更新
+func (i *FileInfoTree) checkTimeline(path string, currtime int64) bool {
+	t, ok := i.defaultTimelines[path]
+	if !ok {
+		return true
+	}
+	return currtime > t
+}
+
 func (i *FileInfoTree) walk(path string) {
 	if _, ok := i.ignores[filepath.Base(path)]; ok {
 		return
@@ -99,10 +113,11 @@ func (i *FileInfoTree) walk(path string) {
 		i.tree[path] = idx
 		i.mu.Unlock()
 		// if update, maybe zero or actual data size
-		if i.onUpdate != nil &&
-			lastUpdate != idx.UpdateTime &&
-			lastSize != idx.Size {
-			i.onUpdate(idx)
+		if i.onUpdate != nil {
+			if i.checkTimeline(path, idx.UpdateTime) || (lastUpdate != idx.UpdateTime &&
+				lastSize != idx.Size) {
+				i.onUpdate(idx)
+			}
 		}
 		return
 	}
