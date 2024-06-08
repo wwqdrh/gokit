@@ -40,6 +40,8 @@ func TestFileInfoTree(t *testing.T) {
 		// 启动更新
 		tree.Start()
 
+		time.Sleep(100 * time.Millisecond)
+
 		// 创建测试文件
 		testFilePath := filepath.Join(tempDir, "test.txt")
 		err = os.WriteFile(testFilePath, []byte("test content"), 0644)
@@ -60,8 +62,36 @@ func TestFileInfoTree(t *testing.T) {
 		time.Sleep(1500 * time.Millisecond)
 
 		if atomic.LoadInt64(&updateCalled) != int64(item.expectCount) {
-			t.Errorf("onUpdate callback not called")
+			t.Errorf("onUpdate callback not called, expected: %d, got %d", item.expectCount, atomic.LoadInt64(&updateCalled))
 		}
 		tree.Stop()
+	}
+}
+
+// 创建一个文件，获取创建时间、修改时间
+// 隔一段时间后再次获取修改时间看是否会发生变化
+func TestFileUpdateTime(t *testing.T) {
+	// 创建一个临时文件
+	file, err := os.CreateTemp("", "example")
+	if err != nil {
+		t.Errorf("创建临时文件失败: %v", err)
+		return
+	}
+	defer os.Remove(file.Name())
+
+	// 获取文件创建时间和修改时间
+	createdTime := GetFileCreateTime(file.Name())
+	t.Logf("创建时间: %v", createdTime)
+	modifiedTime := GetFileModTime(file.Name())
+	t.Logf("初始修改时间: %v", modifiedTime)
+
+	time.Sleep(1 * time.Second)
+
+	// 再次获取修改时间
+	if GetFileCreateTime(file.Name()) != createdTime {
+		t.Error("创建时间发生了变化")
+	}
+	if GetFileModTime(file.Name()) != modifiedTime {
+		t.Error("修改时间发生了变化")
 	}
 }
