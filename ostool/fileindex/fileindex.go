@@ -132,7 +132,7 @@ func (i *FileInfoTree) walk(path string) {
 			// 如果更新时间发生了变化
 			if i.checkTimeline(path, lastUpdate, idx.UpdateTime) {
 				i.onUpdate(*idx)
-			} else if lastSize != idx.Size {
+			} else if lastSize != idx.Size && lastSize != 0 {
 				i.onUpdate(*idx)
 			}
 		}
