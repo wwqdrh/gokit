@@ -373,12 +373,20 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			}
 			logger.DefaultLogger.Warn("not a []float type")
 		case "bool":
-			if cv, ok := val.(bool); !ok {
-				logger.DefaultLogger.Warn("not a bool")
-				res.SetValue(item.Name, false)
-			} else {
+			if cv, ok := val.(bool); ok {
 				res.SetValue(item.Name, cv)
+				continue
 			}
+			if cv, ok := val.(string); ok {
+				if cv == "true" {
+					res.SetValue(item.Name, true)
+					continue
+				} else if cv == "false" {
+					res.SetValue(item.Name, false)
+					continue
+				}
+			}
+			logger.DefaultLogger.Warn("not a bool")
 		case "[]bool":
 			if cv, ok := val.([]bool); ok {
 				res.SetValue(item.Name, cv)
