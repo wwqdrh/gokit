@@ -93,14 +93,15 @@ type Struct struct {
 }
 
 func (s Struct) New() *Instance {
-	return &Instance{reflect.New(s.typ).Elem(), s.index}
+	return &Instance{reflect.New(s.typ).Elem(), s.index, map[string]bool{}}
 }
 
 // 结构体的值
 type Instance struct {
 	instance reflect.Value
 	// <fieldName : 索引>
-	index map[string]int
+	index      map[string]int
+	valueExist map[string]bool
 }
 
 func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
@@ -166,6 +167,7 @@ func (in Instance) Field(name string) (reflect.Value, error) {
 
 // 添加一个方法，不知道什么类型就直接用这个
 func (in *Instance) SetValue(name string, value interface{}) {
+	in.valueExist[name] = true
 	if strings.Contains(name, ".") {
 		in.setObjectValue(name, value)
 	} else {
@@ -173,6 +175,11 @@ func (in *Instance) SetValue(name string, value interface{}) {
 			in.instance.Field(i).Set(reflect.ValueOf(value))
 		}
 	}
+}
+
+func (in *Instance) HasValue(name string) bool {
+	_, ok := in.valueExist[name]
+	return ok
 }
 
 // payload.id
