@@ -337,6 +337,13 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			if cv, ok := val.([]string); ok {
 				res.SetValue(item.Name, cv)
 				continue
+			} else if cv, ok := val.([]interface{}); ok {
+				curs := []string{}
+				for _, item := range cv {
+					curs = append(curs, fmt.Sprint(item))
+				}
+				res.SetValue(item.Name, curs)
+				continue
 			}
 			logger.DefaultLogger.Warn("not a []string type")
 		case "int":
@@ -349,13 +356,22 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			if cv, ok := val.([]int64); ok {
 				res.SetValue(item.Name, cv)
 				continue
-			}
-			if cv, ok := val.([]int32); ok {
+			} else if cv, ok := val.([]int32); ok {
 				res.SetValue(item.Name, cv)
 				continue
-			}
-			if cv, ok := val.([]int); ok {
+			} else if cv, ok := val.([]int); ok {
 				res.SetValue(item.Name, cv)
+				continue
+			} else if cv, ok := val.([]interface{}); ok {
+				curs := []int{}
+				for _, item := range cv {
+					if vint, ok := item.(int); ok {
+						curs = append(curs, vint)
+					} else if vint, ok := item.(int64); ok {
+						curs = append(curs, int(vint))
+					}
+				}
+				res.SetValue(item.Name, curs)
 				continue
 			}
 			logger.DefaultLogger.Warn("not a []string type")
@@ -369,6 +385,15 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 		case "[]float":
 			if cv, ok := val.([]float64); ok {
 				res.SetValue(item.Name, cv)
+				continue
+			} else if cv, ok := val.([]interface{}); ok {
+				curs := []float64{}
+				for _, item := range cv {
+					if vint, ok := item.(float64); ok {
+						curs = append(curs, vint)
+					}
+				}
+				res.SetValue(item.Name, curs)
 				continue
 			}
 			logger.DefaultLogger.Warn("not a []float type")
@@ -390,6 +415,15 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 		case "[]bool":
 			if cv, ok := val.([]bool); ok {
 				res.SetValue(item.Name, cv)
+				continue
+			} else if cv, ok := val.([]interface{}); ok {
+				curs := []bool{}
+				for _, item := range cv {
+					if vint, ok := item.(bool); ok {
+						curs = append(curs, vint)
+					}
+				}
+				res.SetValue(item.Name, curs)
 				continue
 			}
 			logger.DefaultLogger.Warn("not a []bool type")
