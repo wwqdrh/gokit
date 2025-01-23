@@ -450,6 +450,14 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			} else if cv, ok := val.(int); ok {
 				res.SetValue(item.Name, time.Unix(int64(cv), 0))
 				continue
+			} else if cv, ok := val.(string); ok {
+				// 需要符合RFC3339标准，2025-01-23T12:20:12.916Z
+				t, err := time.Parse(time.RFC3339, cv)
+				if err != nil {
+					logger.DefaultLogger.Warn(err.Error())
+				} else {
+					res.SetValue(item.Name, t)
+				}
 			}
 		}
 	}
