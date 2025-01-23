@@ -444,14 +444,14 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			logger.DefaultLogger.Warn("not a []file type")
 		case "datetime":
 			// 默认是以秒为单位
-			if cv, ok := val.(int64); ok {
-				res.SetValue(item.Name, time.Unix(cv, 0))
-				continue
-			} else if cv, ok := val.(int); ok {
+			switch cv := val.(type) {
+			case int64:
 				res.SetValue(item.Name, time.Unix(int64(cv), 0))
-				continue
-			} else if cv, ok := val.(string); ok {
-				// 需要符合RFC3339标准，2025-01-23T12:20:12.916Z
+			case int:
+				res.SetValue(item.Name, time.Unix(int64(cv), 0))
+			case float64:
+				res.SetValue(item.Name, time.Unix(int64(cv), 0))
+			case string:
 				t, err := time.Parse(time.RFC3339, cv)
 				if err != nil {
 					logger.DefaultLogger.Warn(err.Error())
