@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/wwqdrh/gokit/logger"
 )
@@ -50,6 +51,10 @@ func (b *Builder) Build() *Struct {
 
 func (b *Builder) AddString(name, tag string) *Builder {
 	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(""), Tag: reflect.StructTag(tag)})
+}
+
+func (b *Builder) AddDatetime(name, tag string) *Builder {
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(time.Now()), Tag: reflect.StructTag(tag)})
 }
 
 func (b *Builder) AddStringArray(name, tag string) *Builder {
@@ -259,7 +264,12 @@ func (in *Instance) GetValue(name string) (interface{}, error) {
 		return nil, err
 	}
 	// 如果curfield是一个struct的话，递归将该struct转为map[string]interface{}
+	// 需要对一些特殊类型做出处理，例如time.Time
 	if curfield.Kind() == reflect.Struct {
+		switch v := curfield.Interface().(type) {
+		case time.Time, *time.Time:
+			return v, nil
+		}
 		return in.structToMap(curfield), nil
 	} else if curfield.Kind() == reflect.Array || curfield.Kind() == reflect.Slice {
 		if curfield.Len() > 0 && curfield.Index(0).Kind() == reflect.Struct {

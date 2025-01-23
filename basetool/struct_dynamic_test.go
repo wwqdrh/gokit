@@ -1,8 +1,10 @@
 package basetool
 
 import (
+	"errors"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestDynamicStruct(t *testing.T) {
@@ -49,4 +51,35 @@ func TestDynamicStructByHandle(t *testing.T) {
 		"ids":        "[]int",
 		"extra":      "[]object",
 	}))
+}
+
+func TestDyncmicHandlerBindValue(t *testing.T) {
+	h := []*IDynamcHandler{
+		{
+			Name: "create_at", Mode: JSON, Type: "datetime",
+		},
+	}
+
+	handler := &IDynamcHandler{}
+	res, err := handler.BindValue(h, func(item *IDynamcHandler) (interface{}, error) {
+		if item.Name == "create_at" {
+			return 1614547200, nil
+		}
+		return nil, errors.New("not val")
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	create_at, err := res.GetValue("create_at")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	create_at_val, ok := create_at.(time.Time)
+	if !ok {
+		t.Error("create_at not a time.Time")
+		return
+	}
+	fmt.Println(create_at_val.Date())
 }

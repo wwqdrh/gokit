@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/wwqdrh/gokit/logger"
@@ -241,6 +242,8 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 		}
 
 		switch item.Type {
+		case "datetime":
+			mod = mod.AddDatetime(itemName, tag)
 		case "string":
 			mod = mod.AddString(itemName, tag)
 		case "[]string":
@@ -439,6 +442,15 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 				continue
 			}
 			logger.DefaultLogger.Warn("not a []file type")
+		case "datetime":
+			// 默认是以秒为单位
+			if cv, ok := val.(int64); ok {
+				res.SetValue(item.Name, time.Unix(cv, 0))
+				continue
+			} else if cv, ok := val.(int); ok {
+				res.SetValue(item.Name, time.Unix(int64(cv), 0))
+				continue
+			}
 		}
 	}
 
