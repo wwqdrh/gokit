@@ -244,6 +244,8 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 		switch item.Type {
 		case "datetime":
 			mod = mod.AddDatetime(itemName, tag)
+		case "date":
+			mod = mod.AddDate(itemName, tag)
 		case "string":
 			mod = mod.AddString(itemName, tag)
 		case "[]string":
@@ -442,7 +444,7 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 				continue
 			}
 			logger.DefaultLogger.Warn("not a []file type")
-		case "datetime":
+		case "datetime", "date":
 			// 默认是以秒为单位
 			switch cv := val.(type) {
 			case int64:

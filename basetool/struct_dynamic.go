@@ -57,6 +57,10 @@ func (b *Builder) AddDatetime(name, tag string) *Builder {
 	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(time.Now()), Tag: reflect.StructTag(tag)})
 }
 
+func (b *Builder) AddDate(name, tag string) *Builder {
+	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf(time.Now()), Tag: reflect.StructTag(tag)})
+}
+
 func (b *Builder) AddStringArray(name, tag string) *Builder {
 	return b.AddField(reflect.StructField{Name: strings.ToUpper(name), Type: reflect.TypeOf([]string{""}), Tag: reflect.StructTag(tag)})
 }

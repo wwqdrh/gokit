@@ -63,7 +63,7 @@ func TestDyncmicHandlerBindValue(t *testing.T) {
 	handler := &IDynamcHandler{}
 	res, err := handler.BindValue(h, func(item *IDynamcHandler) (interface{}, error) {
 		if item.Name == "create_at" {
-			return 1614547200, nil
+			return 1737820800, nil
 		}
 		return nil, errors.New("not val")
 	})
@@ -81,5 +81,8 @@ func TestDyncmicHandlerBindValue(t *testing.T) {
 		t.Error("create_at not a time.Time")
 		return
 	}
-	fmt.Println(create_at_val.Date())
+	if tstr := fmt.Sprintf("%d-%d-%d", create_at_val.Year(), create_at_val.Month(), create_at_val.Day()); tstr != "2025-1-26" {
+		t.Error("时间错误, " + tstr)
+		return
+	}
 }
