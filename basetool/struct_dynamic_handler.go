@@ -88,6 +88,7 @@ type IDynamcHandler struct {
 	Name     string
 	Type     string
 	Mode     ReqType
+	Require  bool
 	Validate string
 	visited  bool
 
