@@ -89,6 +89,7 @@ type IDynamcHandler struct {
 	Type     string
 	Mode     ReqType
 	Require  bool
+	Default  interface{}
 	Validate string
 	visited  bool
 
@@ -303,7 +304,13 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 			logger.DefaultLogger.Warn("不支持该数据类型")
 		}
 	}
-	return mod.Build().New(), contentType
+	ins := mod.Build().New()
+	for _, item := range request {
+		if item.Default != nil {
+			ins.SetValue(item.Name, item.Default)
+		}
+	}
+	return ins, contentType
 }
 
 func (r IDynamcHandler) BuildModelByPrefix(prefix string, request []*IDynamcHandler) (*Instance, string) {
