@@ -88,7 +88,7 @@ type IDynamcHandler struct {
 	Name     string
 	Type     string
 	Mode     ReqType
-	Require  bool
+	Required bool
 	Default  interface{}
 	Validate string
 	visited  bool
@@ -241,6 +241,12 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 			}
 		default:
 			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", itemName, item.Validate)
+		}
+		if item.Required {
+			tag += " required: true"
+		}
+		if item.Default != nil {
+			tag += fmt.Sprintf(" default: %v", item.Default)
 		}
 
 		switch item.Type {
