@@ -4,6 +4,7 @@ package basetool
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"mime/multipart"
 	"reflect"
 	"sort"
@@ -468,11 +469,21 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			case float64:
 				res.SetValue(item.Name, time.Unix(int64(cv), 0))
 			case string:
-				t, err := time.Parse(time.RFC3339, cv)
-				if err != nil {
-					logger.DefaultLogger.Warn(err.Error())
+				// 如果是纯数字字符串
+				if val, err := strconv.ParseInt(cv, 10, 64); err == nil {
+					if len(cv) > 10 {
+						val /= int64(math.Pow10(len(cv) - 10))
+					} else if len(cv) < 10 {
+						val *= int64(math.Pow10(10 - len(cv)))
+					}
+					res.SetValue(item.Name, time.Unix(int64(val), 0))
 				} else {
-					res.SetValue(item.Name, t)
+					t, err := time.Parse(time.RFC3339, cv)
+					if err != nil {
+						logger.DefaultLogger.Warn(err.Error())
+					} else {
+						res.SetValue(item.Name, t)
+					}
 				}
 			}
 		}
