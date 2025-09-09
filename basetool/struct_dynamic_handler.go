@@ -377,18 +377,28 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 				res.SetValue(item.Name, cv)
 				continue
 			} else if cv, ok := val.([]int32); ok {
-				res.SetValue(item.Name, cv)
+				int64Slice := make([]int64, len(cv))
+				for i, item := range cv {
+					int64Slice[i] = int64(item)
+				}
+				res.SetValue(item.Name, int64Slice)
 				continue
 			} else if cv, ok := val.([]int); ok {
-				res.SetValue(item.Name, cv)
+				int64Slice := make([]int64, len(cv))
+				for i, item := range cv {
+					int64Slice[i] = int64(item)
+				}
+				res.SetValue(item.Name, int64Slice)
 				continue
 			} else if cv, ok := val.([]interface{}); ok {
-				curs := []int{}
+				curs := []int64{}
 				for _, item := range cv {
 					if vint, ok := item.(int); ok {
-						curs = append(curs, vint)
+						curs = append(curs, int64(vint))
 					} else if vint, ok := item.(int64); ok {
-						curs = append(curs, int(vint))
+						curs = append(curs, vint)
+					} else if vint, ok := item.(float64); ok {
+						curs = append(curs, int64(vint))
 					}
 				}
 				res.SetValue(item.Name, curs)

@@ -58,12 +58,15 @@ func TestDyncmicHandlerBindValue(t *testing.T) {
 		{
 			Name: "create_at", Mode: JSON, Type: "datetime",
 		},
+		{Name: "ids", Mode: JSON, Type: "[]int"},
 	}
 
 	handler := &IDynamcHandler{}
 	res, err := handler.BindValue(h, func(item *IDynamcHandler) (interface{}, error) {
 		if item.Name == "create_at" {
 			return 1737820800, nil
+		} else if item.Name == "ids" {
+			return []int{1, 2, 3}, nil
 		}
 		return nil, errors.New("not val")
 	})
@@ -85,4 +88,5 @@ func TestDyncmicHandlerBindValue(t *testing.T) {
 		t.Error("时间错误, " + tstr)
 		return
 	}
+	fmt.Println(res.GetValue("ids"))
 }
