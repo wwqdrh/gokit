@@ -487,12 +487,27 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 						val *= int64(math.Pow10(10 - len(cv)))
 					}
 					res.SetValue(item.Name, time.Unix(int64(val), 0))
-				} else {
-					t, err := time.Parse(time.RFC3339, cv)
+				} else if item.Type == "date" {
+					t, err := time.Parse("2006-01-02", cv)
 					if err != nil {
-						logger.DefaultLogger.Warn(err.Error())
+						// 还可以添加其他格式尝试，如：
+						// t, err = time.Parse("2006-01-02 15:04:05", cv)
+						logger.DefaultLogger.Warn("Failed to parse time string: " + cv + ", error: " + err.Error())
 					} else {
+						// 对于只有日期的字符串，设置时间为当天的 00:00:00
 						res.SetValue(item.Name, t)
+					}
+				} else if item.Type == "datetime" {
+					t, err := time.Parse(time.RFC3339, cv)
+					if err == nil {
+						res.SetValue(item.Name, t)
+						continue
+					}
+
+					t, err = time.Parse("2006-01-02 15:04:05", cv)
+					if err == nil {
+						res.SetValue(item.Name, t)
+						continue
 					}
 				}
 			}
