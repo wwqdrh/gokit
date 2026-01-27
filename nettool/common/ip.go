@@ -57,7 +57,7 @@ func ClientIP(r *http.Request) string {
 // 3、192.168 - 192.168
 // 4、127.0.0.1
 func IsLocalIp(ip string) bool {
-	if ip == "127.0.0.1" {
+	if ip == "127.0.0.1" || ip == "::1" {
 		return true
 	}
 
