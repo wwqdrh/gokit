@@ -453,7 +453,8 @@ func (p *Parser) parseTable() (Table, error) {
 	p.next() // Advance to next token
 
 	if !p.expect(TABLE) { // Expect a table keyword token
-		return table, p.error("expected TABLE")
+		// Skip non-CREATE TABLE statements (e.g., CREATE INDEX)
+		return table, errors.WithStack(ErrNotCreateTable)
 	}
 	p.next() // Advance to next token
 
@@ -519,13 +520,48 @@ func (p *Parser) parseTable() (Table, error) {
 		column.Type = p.current().Value // Set the column type in the column struct
 		p.next()                        // Advance to next token
 
-		for p.accept(IDENT) { // Accept any identifier tokens for the column constraints
-			v := strings.ToUpper(p.current().Value)
-			if strings.Contains(v, "PRIMARY KEY") {
-				table.PkName = column.Name
+		// Accept any tokens for the column constraints, including identifiers, numbers, strings, and complex constraints with parentheses
+		for {
+			// Check if we've reached the end of constraints
+			if p.expect(COMMA) || p.expect(RPAREN) {
+				break
 			}
-			column.Constraints = append(column.Constraints, p.current().Value) // Append the constraint to the column struct
-			p.next()                                                           // Advance to next token
+
+			// Handle complex constraints with parentheses
+			if p.accept(IDENT) {
+				v := strings.ToUpper(p.current().Value)
+				if strings.Contains(v, "PRIMARY KEY") {
+					table.PkName = column.Name
+				}
+				column.Constraints = append(column.Constraints, p.current().Value)
+				p.next()
+
+				// Handle constraints with parentheses like FOREIGN KEY (col) REFERENCES table(col)
+				if p.expect(LPAREN) {
+					// Collect all tokens until matching RPAREN
+					parenthesisCount := 1
+					constraintPart := "("
+					p.next()
+
+					for parenthesisCount > 0 && !p.expect(EOF) {
+						if p.expect(LPAREN) {
+							parenthesisCount++
+						} else if p.expect(RPAREN) {
+							parenthesisCount--
+						}
+						constraintPart += p.current().Value
+						p.next()
+					}
+					column.Constraints = append(column.Constraints, constraintPart)
+				}
+			} else if p.accept(INT) || p.accept(STRING) {
+				// Handle numbers and strings in constraints
+				column.Constraints = append(column.Constraints, p.current().Value)
+				p.next()
+			} else {
+				// Skip any other tokens
+				p.next()
+			}
 		}
 
 		table.Columns = append(table.Columns, column) // Append the column to the table struct
