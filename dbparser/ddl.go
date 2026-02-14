@@ -117,6 +117,15 @@ func ParserSql(sql string) (Table, error) {
 	return tables[0], nil
 }
 
+func GetTables(sql string) ([]Table, error) {
+	lex := NewLexer(sql)
+	tables, err := NewParser(lex.Tokenize()).Parse()
+	if err != nil {
+		return nil, err
+	}
+	return tables, nil
+}
+
 // GetTableFromSQL extracts the Table structure for a specified table name from SQL statements
 // It filters out comments and non-CREATE TABLE statements, and adapts to both SQLite3 and MySQL syntax
 func GetTableFromSQL(sql string, tableName string) (Table, error) {
