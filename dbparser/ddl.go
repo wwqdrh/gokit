@@ -117,6 +117,26 @@ func ParserSql(sql string) (Table, error) {
 	return tables[0], nil
 }
 
+// GetTableFromSQL extracts the Table structure for a specified table name from SQL statements
+// It filters out comments and non-CREATE TABLE statements, and adapts to both SQLite3 and MySQL syntax
+func GetTableFromSQL(sql string, tableName string) (Table, error) {
+	// Tokenize and parse the SQL
+	lex := NewLexer(sql)
+	tables, err := NewParser(lex.Tokenize()).Parse()
+	if err != nil {
+		return Table{}, err
+	}
+
+	// Find the table with the specified name (case-insensitive)
+	for _, table := range tables {
+		if strings.EqualFold(table.Name, tableName) {
+			return table, nil
+		}
+	}
+
+	return Table{}, errors.New("table not found")
+}
+
 // LookupIdent returns the token type for an identifier, or ILLEGAL if it's not a keyword
 func LookupIdent(ident string) TokenType {
 	if tok, ok := keywords[strings.ToLower(ident)]; ok {
@@ -386,16 +406,26 @@ func NewParser(tokens []Token) *Parser {
 func (p *Parser) Parse() ([]Table, error) {
 	tables := []Table{}
 	for {
+		// Check if we've reached the end
+		if p.expect(EOF) {
+			break
+		}
+
 		if t, err := p.parseTable(); err == nil {
 			tables = append(tables, t)
 		} else if errors.Is(err, ErrNotCreateTable) {
-			break
+			// Skip non-CREATE TABLE statements until semicolon
+			for !p.expect(SEMI) && !p.expect(EOF) {
+				p.next()
+			}
+			if p.expect(SEMI) {
+				p.next()
+			}
 		} else {
 			if err != io.EOF {
 				return nil, errors.Wrapf(err, "解析失败")
-			} else {
-				break
 			}
+			break
 		}
 	}
 	return tables, nil
@@ -406,13 +436,6 @@ func (p *Parser) parseTable() (Table, error) {
 
 	if p.expect(EOF) {
 		return table, io.EOF
-	}
-
-	for p.expect(SPACE) {
-		p.next()
-		if p.expect(EOF) {
-			return table, io.EOF
-		}
 	}
 
 	if !p.expect(CREATE) { // Expect a create keyword token
@@ -449,6 +472,32 @@ func (p *Parser) parseTable() (Table, error) {
 	p.next() // Advance to next token
 
 	for { // Loop until end of column list or end of input
+		// Check if it's a table-level PRIMARY KEY constraint
+		v := strings.ToUpper(p.current().Value)
+		if strings.Contains(v, "PRIMARY KEY") {
+			// Handle table-level PRIMARY KEY
+			p.next()
+			if !p.expect(LPAREN) {
+				return table, p.error("expected (")
+			}
+			p.next()
+			if p.expect(IDENT) {
+				table.PkName = p.current().Value
+				p.next()
+			}
+			if p.expect(RPAREN) {
+				p.next()
+			}
+			if p.accept(COMMA) {
+				p.next()
+				continue
+			}
+			if p.expect(RPAREN) {
+				break
+			}
+			return table, p.error("expected )")
+		}
+
 		if !p.expect(IDENT) { // Expect an identifier token for the column name
 			return table, p.error("expected column name")
 		}
@@ -486,11 +535,15 @@ func (p *Parser) parseTable() (Table, error) {
 
 	p.next() // Advance to next token
 
-	for !p.expect(SEMI) && p.accept(IDENT) { // Accept any identifier tokens for the table options
-		table.Options = append(table.Options, p.current().Value) // Append the option to the table struct
-		p.next()                                                 // Advance to next token
+	for !p.expect(SEMI) && !p.expect(EOF) {
+		if p.accept(IDENT) {
+			table.Options = append(table.Options, p.current().Value) // Append the option to the table struct
+		}
+		p.next() // Advance to next token
 	}
-	p.next()
+	if p.expect(SEMI) {
+		p.next()
+	}
 
 	// if !p.expect(EOF) { // Expect an end of file token as the end of the statement
 	// 	return nil, p.error("expected EOF")
