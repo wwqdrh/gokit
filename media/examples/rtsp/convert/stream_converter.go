@@ -14,13 +14,13 @@ import (
 func main() {
 	// 1. 配置RTSP流
 	rtspConfig := stream.RTSPConfig{
-		URL:               "rtsp://192.168.1.100:554/stream1",
-		Username:          "admin",
-		Password:          "password",
-		Transport:         "RTP/AVP",
-		BufferSize:        1024,
-		RetryInterval:     5 * time.Second,
-		MaxRetries:        3,
+		URL:           "rtsp://192.168.1.100:554/stream1",
+		Username:      "admin",
+		Password:      "password",
+		Transport:     "RTP/AVP",
+		BufferSize:    1024,
+		RetryInterval: 5 * time.Second,
+		MaxRetries:    3,
 	}
 
 	// 2. 创建RTSP流
@@ -87,8 +87,8 @@ func main() {
 
 	// 9. 添加流到分发器
 	for _, format := range outputFormats {
-		if outputStream, ok := transcoder.(interface{ GetOutputStream(typ stream.StreamType) stream.Streamer }); ok {
-			if stream := outputStream.GetOutputStream(format); stream != nil {
+		if outputStream := transcoder.GetOutputStream(format); outputStream != nil {
+			if stream := outputStream; stream != nil {
 				if err := distributor.AddStream(stream); err != nil {
 					log.Printf("Failed to add stream to distributor: %v", err)
 				}

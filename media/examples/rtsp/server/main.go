@@ -19,13 +19,13 @@ type CustomHandler struct {
 // HandleDESCRIBE overrides the default DESCRIBE handler
 func (h *CustomHandler) HandleDESCRIBE(session *server.Session, request *rtsp.Request) (*rtsp.Response, error) {
 	response := &rtsp.Response{
-		Version:   "RTSP/1.0",
+		Version:    "RTSP/1.0",
 		StatusCode: rtsp.StatusOK,
 		StatusText: rtsp.StatusText(rtsp.StatusOK),
 		Header:     make(rtsp.Header),
 	}
 	response.Header.Set("Content-Type", "application/sdp")
-	
+
 	// Custom SDP for our test stream
 	sdp := `v=0
 ` +
@@ -44,7 +44,7 @@ func (h *CustomHandler) HandleDESCRIBE(session *server.Session, request *rtsp.Re
 		`a=control:streamid=0
 `
 	response.Body = []byte(sdp)
-	
+
 	fmt.Printf("Custom DESCRIBE handler called for URI: %s\n", request.URI)
 	return response, nil
 }
@@ -52,14 +52,14 @@ func (h *CustomHandler) HandleDESCRIBE(session *server.Session, request *rtsp.Re
 // HandlePLAY overrides the default PLAY handler
 func (h *CustomHandler) HandlePLAY(session *server.Session, request *rtsp.Request) (*rtsp.Response, error) {
 	response := &rtsp.Response{
-		Version:   "RTSP/1.0",
+		Version:    "RTSP/1.0",
 		StatusCode: rtsp.StatusOK,
 		StatusText: rtsp.StatusText(rtsp.StatusOK),
 		Header:     make(rtsp.Header),
 	}
 	response.Header.Set("Session", session.ID)
 	response.Header.Set("RTP-Info", "url=rtsp://localhost:554/test;seq=0;rtptime=0")
-	
+
 	fmt.Printf("Custom PLAY handler called for session: %s\n", session.ID)
 	return response, nil
 }
@@ -68,6 +68,11 @@ func main() {
 	// Create server
 	serverAddr := "0.0.0.0:554"
 	s := server.NewServer(serverAddr)
+
+	// Set video directory
+	videoDir := "./video"
+	s.SetVideoDir(videoDir)
+	fmt.Printf("Video directory set to: %s\n", videoDir)
 
 	// Set custom handler
 	customHandler := &CustomHandler{}
@@ -83,6 +88,22 @@ func main() {
 
 	fmt.Println("RTSP server started successfully!")
 	fmt.Println("Supported methods: OPTIONS, DESCRIBE, SETUP, PLAY, PAUSE, TEARDOWN, ANNOUNCE, RECORD, GET_PARAMETER, SET_PARAMETER")
+	fmt.Println("Available video files:")
+
+	// List available video files
+	files, err := os.ReadDir(videoDir)
+	if err == nil {
+		for _, file := range files {
+			if !file.IsDir() {
+				fmt.Printf("  - %s\n", file.Name())
+			}
+		}
+	} else {
+		fmt.Println("  No video files found")
+	}
+
+	fmt.Println("\nTo access a video stream, use the URL: rtsp://localhost:554/<filename>")
+	fmt.Println("For example: rtsp://localhost:554/纸巾在哪里推荐视频")
 	fmt.Println("Press Ctrl+C to stop the server")
 
 	// Wait for interrupt signal
