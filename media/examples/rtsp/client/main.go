@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/wwqdrh/gokit/media/rtsp/client"
 	"github.com/wwqdrh/gokit/media/rtsp/stream"
 )
 
@@ -91,47 +90,9 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "video/x-flv")
 	w.Header().Set("Transfer-Encoding", "chunked")
 
-	// Create RTSP client
-	c := client.NewClient()
-	defer c.Close()
-
-	// Connect to RTSP server
-	serverAddr := "localhost:554"
-	if err := c.Connect(serverAddr); err != nil {
-		log.Printf("Failed to connect to RTSP server: %v", err)
-		http.Error(w, "Failed to connect to RTSP server", http.StatusInternalServerError)
-		return
-	}
-
-	// Send DESCRIBE request
-	streamURI := "rtsp://localhost:554/" + streamName
-	_, err := c.Describe(streamURI)
-	if err != nil {
-		log.Printf("Failed to send DESCRIBE: %v", err)
-		http.Error(w, "Failed to get stream information", http.StatusInternalServerError)
-		return
-	}
-
-	// Send SETUP request
-	transport := "RTP/AVP;unicast;client_port=8000-8001"
-	_, err = c.Setup(streamURI, transport)
-	if err != nil {
-		log.Printf("Failed to send SETUP: %v", err)
-		http.Error(w, "Failed to set up stream", http.StatusInternalServerError)
-		return
-	}
-
-	// Send PLAY request
-	_, err = c.Play(streamURI)
-	if err != nil {
-		log.Printf("Failed to send PLAY: %v", err)
-		http.Error(w, "Failed to start stream", http.StatusInternalServerError)
-		return
-	}
-
 	// Create RTSP streamer
 	config := stream.RTSPConfig{
-		URL: streamURI,
+		URL: "rtsp://localhost:554/" + streamName,
 	}
 	rtspStream := stream.NewRTSPStream(config)
 
@@ -143,22 +104,159 @@ func handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rtspStream.Stop()
 
-	// Simulate FLV streaming
-	// Note: In a real implementation, we would need to:
-	// 1. Receive RTP packets from the RTSP stream
-	// 2. Convert them to FLV format
-	// 3. Send the FLV data to the client
-
-	// For demonstration purposes, send a simple FLV header
+	// Send FLV header
 	flvHeader := []byte{0x46, 0x4C, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09}
 	w.Write(flvHeader)
 
-	// Send a metadata tag
-	metadataTag := []byte{0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-	w.Write(metadataTag)
+	// Send metadata tag
+	sendMetadataTag(w)
 
-	// Keep connection open
-	select {}
+	// Get RTP packet channel
+	packetChan := rtspStream.GetPacketChan()
+
+	// Process RTP packets and convert to FLV
+	processRTPPackets(w, packetChan)
+}
+
+// sendMetadataTag sends FLV metadata tag
+func sendMetadataTag(w http.ResponseWriter) {
+	// Create metadata tag
+	// Simplified metadata for demonstration
+	metadata := `{"encoder":"GoRTSP-FLV-Converter","width":1920,"height":1080,"framerate":25,"videocodecid":7,"audiocodecid":10}`
+
+	// Calculate tag size
+	tagSize := len(metadata) + 1
+
+	// Create tag header
+	tagHeader := make([]byte, 11)
+	tagHeader[0] = 0x12 // Script data tag
+
+	// Set tag size (big-endian)
+	tagHeader[1] = byte(tagSize >> 16)
+	tagHeader[2] = byte(tagSize >> 8)
+	tagHeader[3] = byte(tagSize)
+
+	// Set timestamp (0 for metadata)
+	tagHeader[4] = 0
+	tagHeader[5] = 0
+	tagHeader[6] = 0
+	tagHeader[7] = 0
+
+	// Set stream ID (0)
+	tagHeader[8] = 0
+	tagHeader[9] = 0
+	tagHeader[10] = 0
+
+	// Create tag body
+	tagBody := make([]byte, 0, len(tagHeader)+len(metadata)+1+4)
+	tagBody = append(tagBody, tagHeader...)
+	tagBody = append(tagBody, 0x02) // String type
+
+	// Add string length (big-endian)
+	strLen := len(metadata)
+	tagBody = append(tagBody, byte(strLen>>8), byte(strLen))
+	tagBody = append(tagBody, []byte(metadata)...)
+
+	// Add tag size at the end (big-endian)
+	totalSize := len(tagHeader) + len(tagBody) - len(tagHeader)
+	tagBody = append(tagBody, byte(totalSize>>16), byte(totalSize>>8), byte(totalSize))
+
+	// Write metadata tag
+	w.Write(tagBody)
+}
+
+// processRTPPackets processes RTP packets and converts to FLV
+func processRTPPackets(w http.ResponseWriter, packetChan chan stream.RTPInfo) {
+	var lastTimestamp uint32
+	var sequenceNum uint16
+
+	for {
+		select {
+		case packet, ok := <-packetChan:
+			if !ok {
+				// Channel closed
+				return
+			}
+
+			// Process H.264 video packets
+			if packet.PayloadType == 96 { // H.264
+				// Calculate timestamp delta
+				timestampDelta := uint32(0)
+				if lastTimestamp > 0 {
+					timestampDelta = packet.Timestamp - lastTimestamp
+				}
+				lastTimestamp = packet.Timestamp
+
+				// Create FLV video tag
+				flvTag := createFLVVideoTag(packet.Payload, packet.Marker, timestampDelta, sequenceNum)
+				sequenceNum++
+
+				// Write FLV tag
+				w.Write(flvTag)
+
+				// Flush response to client
+				if flusher, ok := w.(http.Flusher); ok {
+					flusher.Flush()
+				}
+			}
+		}
+	}
+}
+
+// createFLVVideoTag creates a FLV video tag from H.264 payload
+func createFLVVideoTag(payload []byte, isKeyFrame bool, timestampDelta uint32, sequenceNum uint16) []byte {
+	// Calculate tag size
+	tagSize := len(payload) + 5 // 5 bytes for video header
+
+	// Create tag header
+	tagHeader := make([]byte, 11)
+	tagHeader[0] = 0x09 // Video tag
+
+	// Set tag size (big-endian)
+	tagHeader[1] = byte(tagSize >> 16)
+	tagHeader[2] = byte(tagSize >> 8)
+	tagHeader[3] = byte(tagSize)
+
+	// Set timestamp (big-endian)
+	tagHeader[4] = byte(timestampDelta >> 16)
+	tagHeader[5] = byte(timestampDelta >> 8)
+	tagHeader[6] = byte(timestampDelta)
+	tagHeader[7] = byte(timestampDelta >> 24) // Extended timestamp
+
+	// Set stream ID (0)
+	tagHeader[8] = 0
+	tagHeader[9] = 0
+	tagHeader[10] = 0
+
+	// Create video header
+	videoHeader := make([]byte, 5)
+
+	// Set frame type and codec ID
+	if isKeyFrame {
+		videoHeader[0] = 0x17 // Key frame + H.264
+	} else {
+		videoHeader[0] = 0x27 // Inter frame + H.264
+	}
+
+	// Set AVC packet type
+	videoHeader[1] = 0x01 // AVC NALU
+
+	// Set composition time (0 for simplicity)
+	videoHeader[2] = 0
+	videoHeader[3] = 0
+	videoHeader[4] = 0
+
+	// Create tag body
+	tagBody := make([]byte, 0, len(tagHeader)+len(videoHeader)+len(payload)+4)
+	tagBody = append(tagBody, tagHeader...)
+	tagBody = append(tagBody, videoHeader...)
+	tagBody = append(tagBody, payload...)
+
+	// Add tag size at the end (big-endian)
+	totalSize := len(tagHeader) + len(videoHeader) + len(payload)
+	tagBody = append(tagBody, byte(totalSize>>16), byte(totalSize>>8), byte(totalSize))
+
+	return tagBody
 }
 
 // handleIndex handles the root endpoint (frontend page)
