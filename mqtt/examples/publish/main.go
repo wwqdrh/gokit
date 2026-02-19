@@ -38,7 +38,7 @@ func main() {
 	fmt.Println("Connected successfully!")
 
 	// 发布消息
-	topic := "test/topic"
+	topic := "/api/device1/ping"
 	payload := fmt.Sprintf("Hello MQTT! Time: %s", time.Now().Format(time.RFC3339))
 	qos := byte(1)
 	retained := false
