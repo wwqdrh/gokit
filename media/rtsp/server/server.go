@@ -119,19 +119,20 @@ func (h *DefaultHandler) HandleSETUP(session *Session, request *rtsp.Request) (*
 	// Extract client IP from connection
 	// clientAddr := session.Conn.RemoteAddr().(*net.TCPAddr).IP.String()
 
-	// Create RTP and RTCP connections
-	// Note: This is a simplified implementation
-	// In a real implementation, we would need to:
-	// 1. Parse the client ports correctly
-	// 2. Create UDP connections to the client
-	// 3. Handle the actual RTP/RTCP packet transmission
+	// Parse client ports
+	portParts := strings.Split(clientPort, "-")
+	if len(portParts) != 2 {
+		response.StatusCode = rtsp.StatusBadRequest
+		response.StatusText = rtsp.StatusText(rtsp.StatusBadRequest)
+		return response, nil
+	}
+
+	// Store client address and ports in session
+	session.Transport = transport
 
 	// Set transport response
 	response.Header.Set("Transport", transport+";server_port=8000-8001")
 	response.Header.Set("Session", session.ID)
-
-	// Store transport information
-	session.Transport = transport
 
 	return response, nil
 }
@@ -181,19 +182,87 @@ func (h *DefaultHandler) HandlePLAY(session *Session, request *rtsp.Request) (*r
 
 		// Start streaming goroutine
 		go func() {
-			// Simplified streaming implementation
-			// In a real implementation, we would need to:
-			// 1. Open the video file
-			// 2. Decode the video frames
-			// 3. Encode the frames to H264
-			// 4. Pack the H264 data into RTP packets
-			// 5. Send the RTP packets to the client
-
-			// For demonstration purposes, we'll just log that streaming started
+			// For demonstration purposes, we'll simulate H.264 video streaming
 			fmt.Printf("Starting to stream video: %s\n", videoPath)
 
-			// Simulate streaming for a few seconds
-			time.Sleep(10 * time.Second)
+			// Parse client address and port from transport header
+			clientAddr := session.Conn.RemoteAddr().(*net.TCPAddr).IP.String()
+			clientPort := ""
+			parts := strings.Split(session.Transport, ";")
+			for _, part := range parts {
+				if strings.HasPrefix(part, "client_port=") {
+					clientPort = strings.TrimPrefix(part, "client_port=")
+					break
+				}
+			}
+
+			// Parse client ports
+			portParts := strings.Split(clientPort, "-")
+			if len(portParts) != 2 {
+				fmt.Printf("Invalid client port format: %s\n", clientPort)
+				session.StreamRunning = false
+				return
+			}
+
+			// Create UDP connection for RTP packets
+			rtpAddr, err := net.ResolveUDPAddr("udp", clientAddr+":"+portParts[0])
+			if err != nil {
+				fmt.Printf("Failed to resolve UDP address: %v\n", err)
+				session.StreamRunning = false
+				return
+			}
+
+			udpConn, err := net.DialUDP("udp", nil, rtpAddr)
+			if err != nil {
+				fmt.Printf("Failed to create UDP connection: %v\n", err)
+				session.StreamRunning = false
+				return
+			}
+			defer udpConn.Close()
+
+			// Simulate video streaming
+			sequenceNum := uint16(0)
+			timestamp := uint32(0)
+			ssrc := uint32(time.Now().UnixNano() % 0xffffffff)
+
+			// Simulate 30 frames per second
+			frameInterval := time.Second / 30
+
+			// Stream for 30 seconds
+			for i := 0; i < 900 && session.StreamRunning; i++ {
+				// Create a dummy H.264 NALU
+				// In a real implementation, we would decode the video file to get actual H.264 data
+				naluType := byte(1) // Non-key frame
+				if i%30 == 0 {
+					naluType = byte(5) // Key frame every 30 frames
+				}
+
+				// Create dummy NALU data
+				naluData := make([]byte, 1000)
+				naluData[0] = naluType
+				for j := 1; j < len(naluData); j++ {
+					naluData[j] = byte(j % 256)
+				}
+
+				// Create RTP packet
+				rtpPacket := createRTPPacket(naluData, sequenceNum, timestamp, ssrc, naluType == 5)
+
+				// Send RTP packet to client
+				n, err := udpConn.Write(rtpPacket)
+				if err != nil {
+					fmt.Printf("Failed to send RTP packet: %v\n", err)
+					continue
+				}
+
+				fmt.Printf("Sent RTP packet: seq=%d, timestamp=%d, size=%d, bytes_sent=%d\n", sequenceNum, timestamp, len(rtpPacket), n)
+
+				// Increment sequence number and timestamp
+				sequenceNum++
+				timestamp += 3000 // 90000 Hz / 30 fps = 3000
+
+				// Sleep for frame interval
+				time.Sleep(frameInterval)
+			}
 
 			// Stop streaming
 			session.StreamRunning = false
@@ -202,6 +271,46 @@ func (h *DefaultHandler) HandlePLAY(session *Session, request *rtsp.Request) (*r
 	}
 
 	return response, nil
+}
+
+// createRTPPacket creates an RTP packet from H.264 NALU data
+func createRTPPacket(naluData []byte, sequenceNum uint16, timestamp uint32, ssrc uint32, isKeyFrame bool) []byte {
+	// RTP header size
+	headerSize := 12
+
+	// Total packet size
+	totalSize := headerSize + len(naluData)
+
+	// Create RTP packet
+	rtpPacket := make([]byte, totalSize)
+
+	// Set RTP header
+	rtpPacket[0] = 0x80 // Version 2, padding 0, extension 0, CSRC count 0
+	rtpPacket[1] = 96   // Payload type 96 (H.264)
+	if isKeyFrame {
+		rtpPacket[1] |= 0x80 // Set marker bit for key frames
+	}
+
+	// Set sequence number (big-endian)
+	rtpPacket[2] = byte(sequenceNum >> 8)
+	rtpPacket[3] = byte(sequenceNum)
+
+	// Set timestamp (big-endian)
+	rtpPacket[4] = byte(timestamp >> 24)
+	rtpPacket[5] = byte(timestamp >> 16)
+	rtpPacket[6] = byte(timestamp >> 8)
+	rtpPacket[7] = byte(timestamp)
+
+	// Set SSRC (big-endian)
+	rtpPacket[8] = byte(ssrc >> 24)
+	rtpPacket[9] = byte(ssrc >> 16)
+	rtpPacket[10] = byte(ssrc >> 8)
+	rtpPacket[11] = byte(ssrc)
+
+	// Copy NALU data
+	copy(rtpPacket[headerSize:], naluData)
+
+	return rtpPacket
 }
 
 // HandlePAUSE handles PAUSE requests
