@@ -11,6 +11,7 @@ import (
 func main() {
 	// 配置MQTT客户端
 	opts := mqtt.Options{
+		// Broker: "localhost:1883",
 		Broker:               "broker.emqx.io:1883", // 使用本地MQTT服务器
 		ClientID:             fmt.Sprintf("publisher-%d", time.Now().Unix()),
 		Username:             "",
