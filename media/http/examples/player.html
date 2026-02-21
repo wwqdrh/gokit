@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频流播放示例</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .video-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        video {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .info {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-left: 4px solid #2196F3;
+        }
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>视频流播放示例</h1>
+        
+        <div class="info">
+            <h3>使用说明</h3>
+            <p>本示例展示了如何在网页中使用HTML5的video标签播放视频流。支持以下功能：</p>
+            <ul>
+                <li>边加载边播放</li>
+                <li>拖动进度条</li>
+                <li>全屏播放</li>
+                <li>音量控制</li>
+            </ul>
+            <p>请确保视频文件已上传到服务器的videos目录中。</p>
+        </div>
+        
+        <div class="video-container">
+            <h3>示例视频</h3>
+            <video id="videoPlayer" controls width="800">
+                <source src="/sample.mp4" type="video/mp4">
+                您的浏览器不支持HTML5视频播放。
+            </video>
+        </div>
+        
+        <div class="controls">
+            <button onclick="playVideo()">播放</button>
+            <button onclick="pauseVideo()">暂停</button>
+            <button onclick="stopVideo()">停止</button>
+            <button onclick="toggleMute()">静音</button>
+        </div>
+        
+        <div class="info">
+            <h3>技术实现</h3>
+            <p>后端使用Go语言实现，支持HTTP范围请求，前端使用HTML5的video标签直接播放。</p>
+            
+            <h4>后端核心代码</h4>
+            <div class="code-block">
+<pre>// 处理视频文件请求，支持范围请求
+func (s *VideoServer) serveVideoFile(w http.ResponseWriter, r *http.Request, filePath string, fileInfo os.FileInfo) {
+    // 打开视频文件
+    file, err := os.Open(filePath)
+    if err != nil {
+        http.Error(w, "打开视频文件失败", http.StatusInternalServerError)
+        return
+    }
+    defer file.Close()
+
+    // 获取文件大小
+    fileSize := fileInfo.Size()
+
+    // 处理范围请求
+    rangeHeader := r.Header.Get("Range")
+    if rangeHeader == "" {
+        // 完整文件请求
+        w.Header().Set("Content-Type", "video/mp4")
+        w.Header().Set("Content-Length", fmt.Sprintf("%d", fileSize))
+        w.Header().Set("Accept-Ranges", "bytes")
+        w.WriteHeader(http.StatusOK)
+        // 发送文件内容...
+    } else {
+        // 解析范围请求
+        var start, end int64
+        _, err = fmt.Sscanf(rangeHeader, "bytes=%d-%d", &start, &end)
+        // 处理范围请求...
+        w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize))
+        w.WriteHeader(http.StatusPartialContent)
+        // 发送范围内容...
+    }
+}</pre>
+            </div>
+            
+            <h4>前端核心代码</h4>
+            <div class="code-block">
+<pre>&lt;video id="videoPlayer" controls width="800"&gt;
+    &lt;source src="/sample.mp4" type="video/mp4"&gt;
+    您的浏览器不支持HTML5视频播放。
+&lt;/video&gt;
+
+&lt;script&gt;
+    const video = document.getElementById('videoPlayer');
+    
+    function playVideo() {
+        video.play();
+    }
+    
+    function pauseVideo() {
+        video.pause();
+    }
+    
+    function stopVideo() {
+        video.pause();
+        video.currentTime = 0;
+    }
+    
+    function toggleMute() {
+        video.muted = !video.muted;
+    }
+&lt;/script&gt;</pre>
+            </div>
+        </div>
+        
+        <div class="info">
+            <h3>常见问题</h3>
+            <ul>
+                <li><strong>视频无法播放：</strong>请检查视频文件是否存在，格式是否为MP4。</li>
+                <li><strong>拖动进度条卡顿：</strong>这是正常现象，取决于网络速度和视频大小。</li>
+                <li><strong>视频加载缓慢：</strong>建议使用压缩后的视频文件，或考虑使用自适应流媒体技术。</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        const video = document.getElementById('videoPlayer');
+        
+        function playVideo() {
+            video.play();
+        }
+        
+        function pauseVideo() {
+            video.pause();
+        }
+        
+        function stopVideo() {
+            video.pause();
+            video.currentTime = 0;
+        }
+        
+        function toggleMute() {
+            video.muted = !video.muted;
+        }
+        
+        // 监听视频加载事件
+        video.addEventListener('loadedmetadata', function() {
+            console.log('视频元数据加载完成');
+            console.log('视频时长:', video.duration, '秒');
+        });
+        
+        // 监听视频播放事件
+        video.addEventListener('play', function() {
+            console.log('视频开始播放');
+        });
+        
+        // 监听视频暂停事件
+        video.addEventListener('pause', function() {
+            console.log('视频暂停');
+        });
+        
+        // 监听视频结束事件
+        video.addEventListener('ended', function() {
+            console.log('视频播放结束');
+        });
+    </script>
+</body>
+</html>
