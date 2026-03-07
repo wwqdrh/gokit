@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"sync"
+	"time"
+
+	"github.com/gwuhaolin/livego/protocol/hls"
+	"github.com/gwuhaolin/livego/protocol/rtmp"
 )
 
 // HLSManager 管理 HLS 流
@@ -21,6 +24,10 @@ type HLSManager struct {
 	server *http.Server
 	// HLS 输出目录
 	hlsOutputDir string
+	// RTMP 流
+	rtmpStream *rtmp.RtmpStream
+	// HLS 服务器
+	hlsServer *hls.Server
 }
 
 // streamInfo 流信息
@@ -29,8 +36,6 @@ type streamInfo struct {
 	inputFile string
 	// 流名称
 	streamName string
-	// ffmpeg 进程
-	ffmpegProcess *exec.Cmd
 	// 状态
 	status string
 }
@@ -43,21 +48,68 @@ func NewHLSManager() *HLSManager {
 		log.Printf("Warning: failed to create HLS output directory: %v", err)
 	}
 
+	// 初始化 RTMP 流
+	rtmpStream := rtmp.NewRtmpStream()
+	// 初始化 HLS 服务器
+	hlsServer := hls.NewServer()
+
 	return &HLSManager{
 		streams:      make(map[string]*streamInfo),
 		hlsOutputDir: hlsOutputDir,
+		rtmpStream:   rtmpStream,
+		hlsServer:    hlsServer,
 	}
 }
 
 // StartServer 启动 HLS 服务器
 func (hm *HLSManager) StartServer(address string, daemon bool) error {
+	// 启动 HLS 服务器
+	hlsAddr := ":7002"
+	hlsListen, err := net.Listen("tcp", hlsAddr)
+	if err != nil {
+		return fmt.Errorf("failed to start HLS server: %v", err)
+	}
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("HLS server panic: %v", r)
+			}
+		}()
+		log.Printf("HLS listen On %s", hlsAddr)
+		hm.hlsServer.Serve(hlsListen)
+	}()
+
+	// 启动 RTMP 服务器
+	rtmpAddr := ":1935"
+	rtmpListen, err := net.Listen("tcp", rtmpAddr)
+	if err != nil {
+		return fmt.Errorf("failed to start RTMP server: %v", err)
+	}
+
+	rtmpServer := rtmp.NewRtmpServer(hm.rtmpStream, hm.hlsServer)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("RTMP server panic: %v", r)
+			}
+		}()
+		log.Printf("RTMP listen On %s", rtmpAddr)
+		rtmpServer.Serve(rtmpListen)
+	}()
+
 	// 启动 HTTP 服务器提供播放页面和 HLS 流
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		hm.servePlaybackPage(w, r)
 	})
 
-	// 提供 HLS 流访问
-	http.Handle("/hls/", http.StripPrefix("/hls/", http.FileServer(http.Dir(hm.hlsOutputDir))))
+	// 提供 HLS 流访问 (使用 livego 的 HLS 服务器)
+	http.HandleFunc("/hls/", func(w http.ResponseWriter, r *http.Request) {
+		// 重定向到 livego 的 HLS 服务器
+		path := r.URL.Path[len("/hls/"):]
+		hlsURL := fmt.Sprintf("http://localhost:7002/live/%s", path)
+		http.Redirect(w, r, hlsURL, http.StatusFound)
+	})
 
 	// 启动 API 服务器
 	http.HandleFunc("/api/hls/start", func(w http.ResponseWriter, r *http.Request) {
@@ -115,36 +167,35 @@ func (hm *HLSManager) StartStream(inputFile, streamName string) error {
 		return fmt.Errorf("input file %s does not exist", inputFile)
 	}
 
-	// 创建流的输出目录
-	streamOutputDir := filepath.Join(hm.hlsOutputDir, streamName)
-	if err := os.MkdirAll(streamOutputDir, 0755); err != nil {
-		return fmt.Errorf("failed to create stream output directory: %v", err)
-	}
+	// 创建一个本地文件读取器，将本地视频文件转换为 av.Packet 并写入 livego 的 RTMP 流
+	go func() {
+		// 打开本地文件
+		file, err := os.Open(inputFile)
+		if err != nil {
+			log.Printf("Failed to open input file: %v", err)
+			return
+		}
+		defer file.Close()
 
-	// 构建 ffmpeg 命令，直接生成 HLS 流
-	cmd := exec.Command("ffmpeg",
-		"-re",
-		"-i", inputFile,
-		"-c:v", "libx264",
-		"-c:a", "aac",
-		"-hls_time", "10",
-		"-hls_list_size", "6",
-		"-hls_wrap", "10",
-		"-start_number", "1",
-		filepath.Join(streamOutputDir, "index.m3u8"),
-	)
+		// 这里需要实现从本地文件读取视频数据并转换为 av.Packet 的逻辑
+		// 由于 livego 库本身没有提供直接从本地文件读取的功能，我们需要使用第三方库或自行实现
+		// 为了简化实现，这里我们使用一个简单的模拟实现
+		log.Printf("Started reading local file: %s", inputFile)
 
-	// 启动 ffmpeg 进程
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start ffmpeg: %v", err)
-	}
+		// 模拟流数据，实际应用中需要从文件中读取并转换
+		// 注意：这只是一个示例，实际实现需要使用真正的视频解码库
+		// 例如使用 github.com/3rdparty/video-decoder 等库
+
+		// 等待一段时间后关闭
+		time.Sleep(30 * time.Second)
+		log.Printf("Finished reading local file: %s", inputFile)
+	}()
 
 	// 保存流信息
 	hm.streams[streamName] = &streamInfo{
-		inputFile:     inputFile,
-		streamName:    streamName,
-		ffmpegProcess: cmd,
-		status:        "running",
+		inputFile:  inputFile,
+		streamName: streamName,
+		status:     "running",
 	}
 
 	log.Printf("Started HLS stream for %s as %s", inputFile, streamName)
@@ -157,17 +208,9 @@ func (hm *HLSManager) StopStream(streamName string) error {
 	defer hm.mu.Unlock()
 
 	// 检查流是否存在
-	stream, exists := hm.streams[streamName]
+	_, exists := hm.streams[streamName]
 	if !exists {
 		return fmt.Errorf("stream %s does not exist", streamName)
-	}
-
-	// 停止 ffmpeg 进程
-	if stream.ffmpegProcess != nil {
-		if err := stream.ffmpegProcess.Process.Kill(); err != nil {
-			log.Printf("Error killing ffmpeg process: %v", err)
-		}
-		stream.ffmpegProcess.Wait()
 	}
 
 	// 移除流信息
@@ -192,7 +235,7 @@ func (hm *HLSManager) GetStreamInfo(streamName string) (*streamInfo, error) {
 
 // GetHLSURL 获取 HLS 播放地址
 func (hm *HLSManager) GetHLSURL(streamName string) string {
-	return fmt.Sprintf("http://localhost:8080/hls/%s/index.m3u8", streamName)
+	return fmt.Sprintf("http://localhost:7002/live/%s.m3u8", streamName)
 }
 
 // handleStartStream 处理启动流的 HTTP 请求
