@@ -3,6 +3,7 @@ module github.com/wwqdrh/gokit/media
 go 1.24.13
 
 require (
+	github.com/Eyevinn/mp4ff v0.51.0 // indirect
 	github.com/auth0/go-jwt-middleware v0.0.0-20190805220309-36081240882b // indirect
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
