@@ -2,35 +2,73 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"time"
 
-	"github.com/wwqdrh/gokit/media/http"
+	"github.com/wwqdrh/gokit/media/hls"
 )
 
 func main() {
-	// 获取视频目录参数
-	videoDir := "./video"
-	if len(os.Args) > 1 {
-		videoDir = os.Args[1]
-	}
+	manager := hls.NewHLSManager()
 
-	// 创建视频流服务器
-	server := http.NewVideoServer(videoDir)
+	// 测试文件路径
+	inputFile := "./video/sample.mp4"
+	streamName := "test_sample"
 
 	// 启动服务器
-	addr := ":8080"
-	if len(os.Args) > 2 {
-		addr = os.Args[2]
-	}
-
-	fmt.Println("=====================================")
-	fmt.Println("视频流服务器启动中...")
-	fmt.Println("=====================================")
-
-	// 启动HTTP服务
-	err := server.Start(addr)
+	err := manager.StartServer(":8080", false)
 	if err != nil {
-		fmt.Printf("服务器启动失败: %v\n", err)
-		os.Exit(1)
+		fmt.Println(err.Error())
+		// t.Errorf("StartServer() failed: %v", err)
+		return
 	}
+	defer manager.StopServer()
+
+	// 等待服务器启动
+	time.Sleep(2 * time.Second)
+
+	// 启动流
+	err = manager.StartStream(inputFile, streamName)
+	if err != nil {
+		fmt.Println(err.Error())
+		// t.Errorf("StartStream() failed: %v", err)
+		return
+	}
+
+	// 等待流启动
+	time.Sleep(5 * time.Second)
+
+	// 检查流是否存在
+	stream, err := manager.GetStreamInfo(streamName)
+	if err != nil {
+		fmt.Println(err.Error())
+		// t.Errorf("GetStreamInfo() failed: %v", err)
+		return
+	}
+
+	if stream == nil {
+		fmt.Println(err.Error())
+		// t.Errorf("GetStreamInfo() returned nil")
+		return
+	}
+
+	// if stream.status != "running" {
+	// 	return
+	// 	// t.Errorf("Stream status is not running: %s", stream.status)
+	// }
+
+	// 停止流
+	// err = manager.StopStream(streamName)
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	// t.Errorf("StopStream() failed: %v", err)
+	// 	return
+	// }
+
+	// // 检查流是否已停止
+	// _, err = manager.GetStreamInfo(streamName)
+	// if err == nil {
+	// 	fmt.Println(err.Error())
+	// 	return
+	// 	// t.Errorf("GetStreamInfo() should have failed after stopping the stream")
+	// }
 }
