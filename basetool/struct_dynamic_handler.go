@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/wwqdrh/gokit/logger"
 )
 
@@ -338,17 +337,19 @@ func (r IDynamcHandler) BuildModelByPrefix(prefix string, request []*IDynamcHand
 
 func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *IDynamcHandler) (interface{}, error)) (*Instance, error) {
 	res, _ := r.BuildModel("", request)
-	var errs error
+	// var errs error
 	for _, item := range request {
 		val, err := getVal(item)
 		if err != nil {
-			if errs == nil {
-				errs = err
+			if err.Error() == "NOVALUE" {
+				continue
 			} else {
-				errs = errors.Wrapf(err, "%s\n", err.Error())
+				return nil, err
 			}
-			continue
 		}
+		// if errs != nil {
+		// 	return nil, errs
+		// }
 
 		switch item.Type {
 		case "string":
