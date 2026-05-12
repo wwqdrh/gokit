@@ -273,6 +273,8 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 		case "file":
 			f := &multipart.FileHeader{}
 			mod = mod.AddStruct(itemName, f, tag, false)
+		case "[]file":
+			mod = mod.AddStruct(itemName, []*multipart.FileHeader{}, tag, false)
 		case "object":
 			m, _ := r.BuildModelByPrefix(item.Name, request)
 			mod = mod.AddStruct(itemName, reflect.New(m.Type()).Elem().Interface(), tag, false)
