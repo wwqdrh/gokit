@@ -258,9 +258,9 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 			mod = mod.AddString(itemName, tag)
 		case "[]string":
 			mod = mod.AddStringArray(itemName, tag)
-		case "int":
+		case "int", "number":
 			mod = mod.AddInt64(itemName, tag)
-		case "[]int":
+		case "[]int", "[]number":
 			mod = mod.AddInt64Array(itemName, tag)
 		case "float":
 			mod = mod.AddFloat64(itemName, tag)
