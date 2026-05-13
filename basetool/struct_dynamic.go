@@ -137,11 +137,11 @@ func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
 			res[field] = val.String()
 		case "bool":
 			res[field] = val.Bool()
-		case "int":
+		case "int", "number":
 			res[field] = val.Int()
 		case "float":
 			res[field] = val.Float()
-		case "[]int":
+		case "[]int", "[]number":
 			res[field] = val.Interface().([]int64)
 		case "[]bool":
 			res[field] = val.Interface().([]bool)

@@ -260,6 +260,7 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 			mod = mod.AddStringArray(itemName, tag)
 		case "int", "number":
 			mod = mod.AddInt64(itemName, tag)
+			item.Default, _ = strconv.ParseInt(fmt.Sprint(item.Default), 10, 64)
 		case "[]int", "[]number":
 			mod = mod.AddInt64Array(itemName, tag)
 		case "float":
@@ -369,13 +370,13 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 				continue
 			}
 			logger.DefaultLogger.Warn("not a []string type")
-		case "int":
+		case "int", "number":
 			if cv, err := strconv.ParseInt(fmt.Sprint(val), 10, 64); err != nil {
 				logger.DefaultLogger.Warn("not a int64")
 			} else {
 				res.SetValue(item.Name, cv)
 			}
-		case "[]int":
+		case "[]int", "[]number":
 			if cv, ok := val.([]int64); ok {
 				res.SetValue(item.Name, cv)
 				continue

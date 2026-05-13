@@ -31,7 +31,7 @@ func IsBlank(value reflect.Value) bool {
 
 func EmptyValue(mode string) interface{} {
 	switch mode {
-	case "int":
+	case "int", "number":
 		return 0
 	case "float":
 		return float64(0)
@@ -39,7 +39,7 @@ func EmptyValue(mode string) interface{} {
 		return false
 	case "string":
 		return ""
-	case "[]int":
+	case "[]int", "[]number":
 		return []int{}
 	case "[]float":
 		return []float64{}
@@ -64,7 +64,7 @@ func Str2Value(val string, mode string) (interface{}, error) {
 	case "[]string":
 		// 如果mode是[]string，使用strings.Split函数将val按逗号分割为一个字符串切片，并返回
 		return strings.Split(val, ","), nil
-	case "int":
+	case "int", "number":
 		// 如果mode是int，使用strconv.Atoi函数将val转换为一个整数，并返回
 		n, err := strconv.Atoi(val)
 		if err != nil {
@@ -72,7 +72,7 @@ func Str2Value(val string, mode string) (interface{}, error) {
 			return nil, err
 		}
 		return n, nil
-	case "[]int":
+	case "[]int", "[]number":
 		// 如果mode是[]int，先使用strings.Split函数将val按逗号分割为一个字符串切片
 		strs := strings.Split(val, ",")
 		// 创建一个整数切片，长度和容量与字符串切片相同
