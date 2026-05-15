@@ -109,8 +109,8 @@ func (s Struct) New() *Instance {
 type Instance struct {
 	instance reflect.Value
 	// <fieldName : 索引>
-	index      map[string]int
-	valueExist map[string]bool
+	index        map[string]int
+	valueNoExist map[string]bool
 }
 
 func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
@@ -176,7 +176,6 @@ func (in Instance) Field(name string) (reflect.Value, error) {
 
 // 添加一个方法，不知道什么类型就直接用这个
 func (in *Instance) SetValue(name string, value interface{}) {
-	in.valueExist[name] = true
 	if strings.Contains(name, ".") {
 		in.setObjectValue(name, value)
 	} else {
@@ -187,8 +186,14 @@ func (in *Instance) SetValue(name string, value interface{}) {
 }
 
 func (in *Instance) HasValue(name string) bool {
-	_, ok := in.valueExist[name]
-	return ok
+	if status, ok := in.valueNoExist[name]; status && ok {
+		return false
+	}
+	return true
+}
+
+func (in *Instance) SetNoValue(name string) {
+	in.valueNoExist[name] = true
 }
 
 // payload.id

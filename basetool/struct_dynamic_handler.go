@@ -345,6 +345,7 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 		val, err := getVal(item)
 		if err != nil {
 			if err.Error() == "NOVALUE" {
+				res.SetNoValue(item.Name)
 				continue
 			} else {
 				return nil, err
