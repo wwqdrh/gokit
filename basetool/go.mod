@@ -2,10 +2,7 @@ module github.com/wwqdrh/gokit/basetool
 
 go 1.18
 
-require (
-	github.com/pkg/errors v0.9.1
-	github.com/wwqdrh/gokit/logger v0.0.0-20230829165217-3009a0f54faa
-)
+require github.com/wwqdrh/gokit/logger v0.0.0-20230829165217-3009a0f54faa
 
 require (
 	github.com/gorilla/websocket v1.5.0 // indirect

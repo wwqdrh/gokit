@@ -243,10 +243,10 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 			tag = fmt.Sprintf(`%s:"%s" validate:"%s"`, "form", itemName, item.Validate)
 		}
 		if item.Required {
-			tag += " required: true"
+			tag += ` required:"true"` // ✅ 修复：双引号包裹 true
 		}
 		if item.Default != nil {
-			tag += fmt.Sprintf(" default: %v", item.Default)
+			tag += fmt.Sprintf(` default:"%v"`, item.Default) // ✅ 修复：双引号包裹值
 		}
 
 		switch item.Type {
@@ -316,7 +316,7 @@ func (r IDynamcHandler) BuildModel(prefix string, request []*IDynamcHandler) (*I
 	ins := mod.Build().New()
 	for _, item := range request {
 		if item.Default != nil {
-			ins.SetValue(item.Name, item.Default)
+			ins.SetDefaultValue(item.Name, item.Default)
 		}
 	}
 	return ins, contentType
@@ -345,8 +345,13 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 		val, err := getVal(item)
 		if err != nil {
 			if err.Error() == "NOVALUE" {
-				res.SetNoValue(item.Name)
-				continue
+				if item.Default == nil {
+					res.SetNoValue(item.Name)
+					continue
+				} else {
+					res.SetDefaultValue(item.Name, item.Default)
+					continue
+				}
 			} else {
 				return nil, err
 			}

@@ -102,7 +102,12 @@ type Struct struct {
 }
 
 func (s Struct) New() *Instance {
-	return &Instance{reflect.New(s.typ).Elem(), s.index, map[string]bool{}}
+	return &Instance{
+		reflect.New(s.typ).Elem(),
+		s.index,
+		map[string]bool{},
+		map[string]interface{}{},
+	}
 }
 
 // 结构体的值
@@ -111,6 +116,7 @@ type Instance struct {
 	// <fieldName : 索引>
 	index        map[string]int
 	valueNoExist map[string]bool
+	defaultValue map[string]interface{}
 }
 
 func (in *Instance) ToMap(dataType map[string]string) map[string]interface{} {
@@ -176,6 +182,7 @@ func (in Instance) Field(name string) (reflect.Value, error) {
 
 // 添加一个方法，不知道什么类型就直接用这个
 func (in *Instance) SetValue(name string, value interface{}) {
+	in.valueNoExist[name] = false
 	if strings.Contains(name, ".") {
 		in.setObjectValue(name, value)
 	} else {
@@ -183,6 +190,11 @@ func (in *Instance) SetValue(name string, value interface{}) {
 			in.instance.Field(i).Set(reflect.ValueOf(value))
 		}
 	}
+}
+
+func (in *Instance) SetDefaultValue(name string, value interface{}) {
+	in.defaultValue[name] = value
+	in.SetValue(name, value)
 }
 
 func (in *Instance) HasValue(name string) bool {
