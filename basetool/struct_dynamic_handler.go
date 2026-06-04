@@ -377,8 +377,20 @@ func (r IDynamcHandler) BindValue(request []*IDynamcHandler, getVal func(item *I
 			}
 			logger.DefaultLogger.Warn("not a []string type")
 		case "int", "number":
-			if cv, err := strconv.ParseInt(fmt.Sprint(val), 10, 64); err != nil {
-				logger.DefaultLogger.Warn("not a int64")
+			s := fmt.Sprint(val)
+			// 尝试解析为 int64
+			cv, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				// 若解析失败，尝试解析为 float64（支持科学计数法）
+				fv, ferr := strconv.ParseFloat(s, 64)
+				if ferr != nil {
+					// 既不是整数也不是浮点数/科学计数法，记录警告
+					logger.DefaultLogger.Warnx("%s not a number", nil, s)
+				} else {
+					// 将浮点数转换为 int64（根据需求：直接截断小数部分）
+					cv = int64(fv)
+					res.SetValue(item.Name, cv)
+				}
 			} else {
 				res.SetValue(item.Name, cv)
 			}
